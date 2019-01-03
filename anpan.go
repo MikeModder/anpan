@@ -21,7 +21,7 @@ func NewCommandHandler(prefix string, owners []string, ignoreBots, checkPerms bo
 		Prefix:           prefix,
 		Owners:           owners,
 		StatusHandler:    NewDefaultStatusHandler(),
-		Commands:         map[string]*Command{},
+		Commands:         make(map[string]*Command),
 		IgnoreBots:       ignoreBots,
 		CheckPermissions: checkPerms,
 	}
