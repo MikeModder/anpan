@@ -32,6 +32,17 @@ func (c *CommandHandler) RemoveCommand(name string) {
 	delete(c.Commands, name)
 }
 
+// IsOwner Checks if the given user ID is one of the owners
+func (c *CommandHandler) IsOwner(id string) bool {
+	for _, o := range c.Owners {
+		if id == o {
+			return true
+		}
+	}
+	
+	return false
+}
+
 // OnMessage You don't need to call this! Pass this to AddHandler()
 func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Check if the author is a bot, and deny entry if IgnoreBots is true
@@ -72,6 +83,19 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			s.ChannelMessageSendEmbed(m.ChannelID, embed)
 			return
 		}
+
+		// Check if it's an owner-only command, and if it is make sure the author is an owner
+		if command.OwnerOnly && !c.IsOwner(m.Author.ID) {
+			// It's an owner-only command, and the user wasn't on the owners list 
+			embed := &discordgo.MessageEmbed{
+				Title: "You can't run that command!",
+				Description: "Sorry, on the bot owner(s) can run that command!",
+				Color: 0xff0000,
+			}
+			
+			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			return
+		}				
 
 		command.Run(s, m, cmd[1:])
 	} else {

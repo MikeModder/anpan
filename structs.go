@@ -21,13 +21,16 @@ type CommandHandler struct {
 	Commands         map[string]*Command
 	IgnoreBots       bool
 	CheckPermissions bool
+	//UseDefaultHelp   bool
 }
 
+// StatusHandler Struct for status handler; contains entries and the change interval
 type StatusHandler struct {
 	Entries        []string
 	SwitchInterval int
 }
 
+// Command it's literally just a command
 type Command struct {
 	Name        string
 	Description string
