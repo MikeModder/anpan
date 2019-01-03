@@ -61,6 +61,12 @@ func (c *CommandHandler) debugLog(out string) {
 	}
 }
 
+// AddDefaultHelpCommand adds the default (library provided) help command to the list of commands
+// TODO: users have to manually call this to add the help command, maybe find a way to add it automatially if no help command is detected?
+func (c *CommandHandler) AddDefaultHelpCommand() {
+	c.AddCommand("help", "Get some help using the bot", false, 0, c.defaultHelpCmd)
+}
+
 // OnMessage You don't need to call this! Pass this to AddHandler()
 func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Check if the author is a bot, and deny entry if IgnoreBots is true
@@ -128,5 +134,23 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		// We don't :(
 		c.debugLog("not a command")
 		return
+	}
+}
+
+func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	count := len(c.Commands)
+	var list string
+
+	for name := range c.Commands {
+		cmd := c.Commands[name]
+		list += fmt.Sprintf("`%s - %s`\n", c.Name, c.Description)
+	}
+
+	embed := &discordgo.MessageEmbed{
+		Title:       "Commands:",
+		Description: list,
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "The bot's prefix is: " + c.Prefix,
+		},
 	}
 }
