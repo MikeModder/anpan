@@ -18,18 +18,19 @@ package anpan
 // NewCommandHandler Creates a new command handler
 func NewCommandHandler(prefix string, owners []string, ignoreBots, checkPerms bool) CommandHandler {
 	return CommandHandler{
-		Prefix: prefix,
-		Owners: owners,
-		Commands: map[string]*Command{},
-		IgnoreBots: ignoreBots,
-		CheckPermissions: checkPerms,		
+		Prefix:           prefix,
+		Owners:           owners,
+		StatusHandler:    NewDefaultStatusHandler(),
+		Commands:         map[string]*Command{},
+		IgnoreBots:       ignoreBots,
+		CheckPermissions: checkPerms,
 	}
 }
 
 // NewStatusHandler Creates a new status handler
-func NewStatusHandler(entries []string, interval int) StatusHandler {
+func NewStatusHandler(entries []string, interval string) StatusHandler {
 	return StatusHandler{
-		Entries: entries,
+		Entries:        entries,
 		SwitchInterval: interval,
 	}
 }
@@ -39,5 +40,5 @@ func NewDefaultStatusHandler() StatusHandler {
 	return NewStatusHandler([]string{
 		"Powered by Golang!",
 		"Powered by anpan!",
-	}, 60)
+	}, "60s")
 }

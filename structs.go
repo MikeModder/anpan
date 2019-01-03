@@ -10,24 +10,22 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// CommandHandler Contains all the data needed for the handler to function
-/* Prefix: Prefix used for command
- *
- */
+// CommandHandler Contains all the data needed for the handler to function/
 type CommandHandler struct {
 	Prefix           string
 	Owners           []string
-	PlayingStatus    StatusHandler
+	StatusHandler    StatusHandler
 	Commands         map[string]*Command
 	IgnoreBots       bool
 	CheckPermissions bool
+	Debug            bool
 	//UseDefaultHelp   bool
 }
 
 // StatusHandler Struct for status handler; contains entries and the change interval
 type StatusHandler struct {
 	Entries        []string
-	SwitchInterval int
+	SwitchInterval string
 }
 
 // Command it's literally just a command

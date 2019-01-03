@@ -1,10 +1,21 @@
 package anpan
 
+/* helpers.go:
+ * Contains helper functions to make my life easier sometimes
+ *
+ * Anpan (c) 2018 MikeModder/MikeModder007
+ */
+
 import (
 	"github.com/bwmarrin/discordgo"
 )
 
 func checkPermissions(s *discordgo.Session, guildid, memberid string, required int) bool {
+	// No permissions, don't even bother checking this
+	if required == 0 {
+		return true
+	}
+
 	member, err := s.State.Member(guildid, memberid)
 	if err != nil {
 		return false

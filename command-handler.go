@@ -1,6 +1,13 @@
 package anpan
 
+/* command-handler.go:
+ * Contains the main code of the command handler
+ *
+ * Anpan (c) 2018 MikeModder/MikeModder007
+ */
+
 import (
+	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -39,25 +46,40 @@ func (c *CommandHandler) IsOwner(id string) bool {
 			return true
 		}
 	}
-	
+
 	return false
+}
+
+// SetDebug Sets debug on or off
+func (c *CommandHandler) SetDebug(enabled bool) {
+	c.Debug = enabled
+}
+
+func (c *CommandHandler) debugLog(out string) {
+	if c.Debug {
+		fmt.Println(out)
+	}
 }
 
 // OnMessage You don't need to call this! Pass this to AddHandler()
 func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Check if the author is a bot, and deny entry if IgnoreBots is true
 	if m.Author.Bot && c.IgnoreBots {
+		c.debugLog("author not bot")
 		return
 	}
 
 	content := m.Content
+	c.debugLog(content)
 
 	// Check for the prefix. If the content doesn't start with the prefix, return
 	if !strings.HasPrefix(content, c.Prefix) {
+		c.debugLog("no prefix")
 		return
 	}
 
-	cmd := strings.Split(content, " ")
+	cmd := strings.Split(strings.TrimPrefix(content, c.Prefix), " ")
+	c.debugLog(cmd[0])
 
 	// Check and see if we have a command by that name
 	if command, exist := c.Commands[cmd[0]]; exist {
@@ -70,6 +92,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			}
 
 			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			c.debugLog("user bad perms")
 			return
 		}
 
@@ -81,25 +104,29 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			}
 
 			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			c.debugLog("bot bad perms")
 			return
 		}
 
 		// Check if it's an owner-only command, and if it is make sure the author is an owner
 		if command.OwnerOnly && !c.IsOwner(m.Author.ID) {
-			// It's an owner-only command, and the user wasn't on the owners list 
+			// It's an owner-only command, and the user wasn't on the owners list
 			embed := &discordgo.MessageEmbed{
-				Title: "You can't run that command!",
+				Title:       "You can't run that command!",
 				Description: "Sorry, on the bot owner(s) can run that command!",
-				Color: 0xff0000,
+				Color:       0xff0000,
 			}
-			
-			s.ChannelMessageSendEmbed(m.ChannelID, embed)
-			return
-		}				
 
+			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			c.debugLog("owner only")
+			return
+		}
+
+		c.debugLog(command.Name)
 		command.Run(s, m, cmd[1:])
 	} else {
 		// We don't :(
+		c.debugLog("not a command")
 		return
 	}
 }
