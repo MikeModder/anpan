@@ -141,6 +141,30 @@ func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.Messa
 	count := len(c.Commands)
 	var list string
 
+	if len(args) >= 1 {
+		if commannd, has := c.Commands[args[0]]; has {
+			embed := &discordgo.MessageEmbed{
+				Title:       "Help!",
+				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: `%v`", commannd.Name, commannd.Description, commannd.OwnerOnly),
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: fmt.Sprintf("The bot's prefix is %s", c.Prefix),
+				},
+			}
+
+			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			return
+		} else {
+			embed := &discordgo.MessageEmbed{
+				Title:       "Error!",
+				Description: fmt.Sprintf("`%s` is not a valid command!", args[0]),
+				Color:       0xff0000,
+			}
+
+			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			return
+		}
+	}
+
 	for name := range c.Commands {
 		cmd := c.Commands[name]
 		list += fmt.Sprintf("`%s - %s`\n", cmd.Name, cmd.Description)
