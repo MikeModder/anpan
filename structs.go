@@ -10,7 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// CommandHandler Contains all the data needed for the handler to function/
+// CommandHandler contains all the data needed for the handler to function
 type CommandHandler struct {
 	Prefix           string
 	Owners           []string
@@ -22,7 +22,7 @@ type CommandHandler struct {
 	//UseDefaultHelp   bool
 }
 
-// StatusHandler Struct for status handler; contains entries and the change interval
+// StatusHandler contains status entries and the change interval
 type StatusHandler struct {
 	Entries        []string
 	SwitchInterval string
