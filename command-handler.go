@@ -13,17 +13,17 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// SetPrefix Change the prefix
+// SetPrefix changes the prefix
 func (c *CommandHandler) SetPrefix(prefix string) {
 	c.Prefix = prefix
 }
 
-// GetPrefix Get the current prefix
+// GetPrefix gets the current prefix
 func (c *CommandHandler) GetPrefix() string {
 	return c.Prefix
 }
 
-// AddCommand Add a command to the Commands map
+// AddCommand adds a command to the Commands map
 func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run func(Context, []string)) {
 	c.Commands[name] = &Command{
 		Name:        name,
@@ -35,7 +35,7 @@ func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bo
 	}
 }
 
-// RemoveCommand Remove a command from the Commands map
+// RemoveCommand removes a command from the Commands map
 func (c *CommandHandler) RemoveCommand(name string) {
 	if _, has := c.Commands[name]; has {
 		delete(c.Commands, name)
@@ -43,7 +43,7 @@ func (c *CommandHandler) RemoveCommand(name string) {
 	return
 }
 
-// IsOwner Checks if the given user ID is one of the owners
+// IsOwner checks if the given user ID is one of the owners
 func (c *CommandHandler) IsOwner(id string) bool {
 	for _, o := range c.Owners {
 		if id == o {
@@ -54,7 +54,7 @@ func (c *CommandHandler) IsOwner(id string) bool {
 	return false
 }
 
-// SetDebug - Sets debug on or off
+// SetDebug sets debug on or off
 func (c *CommandHandler) SetDebug(enabled bool) {
 	c.Debug = enabled
 }
@@ -65,7 +65,7 @@ func (c *CommandHandler) debugLog(out string) {
 	}
 }
 
-// AddDefaultHelpCommand - adds the default (library provided) help command to the list of commands
+// AddDefaultHelpCommand adds the default (library provided) help command to the list of commands
 // TODO: users have to manually call this to add the help command, maybe find a way to add it automatially if no help command is detected?
 func (c *CommandHandler) AddDefaultHelpCommand() {
 	c.AddCommand("help", "Get some help about using the bot", false, false, 0, c.defaultHelpCmd)
