@@ -36,7 +36,10 @@ func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, perms int
 
 // RemoveCommand Remove a command from the Commands map
 func (c *CommandHandler) RemoveCommand(name string) {
-	delete(c.Commands, name)
+	if _, has := c.Commands[name]; has {
+		delete(c.Commands, name)
+	}
+	return
 }
 
 // IsOwner Checks if the given user ID is one of the owners
@@ -102,7 +105,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			return
 		}
 
-		if !checkPermissions(s, m.GuildID, m.Author.ID, command.Permissions) {
+		if !checkPermissions(s, m.GuildID, s.State.User.ID, command.Permissions) {
 			embed := &discordgo.MessageEmbed{
 				Title:       "I don't have the correct permissions!",
 				Description: "Uh oh, I don't have the right permissions to execute that command for you! Make sure I have the right permissions (ex. Kick Members) then try running the command again!",
@@ -138,9 +141,6 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 }
 
 func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
-	count := len(c.Commands)
-	var list string
-
 	if len(args) >= 1 {
 		if commannd, has := c.Commands[args[0]]; has {
 			embed := &discordgo.MessageEmbed{
@@ -153,17 +153,21 @@ func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.Messa
 
 			s.ChannelMessageSendEmbed(m.ChannelID, embed)
 			return
-		} else {
-			embed := &discordgo.MessageEmbed{
-				Title:       "Error!",
-				Description: fmt.Sprintf("`%s` is not a valid command!", args[0]),
-				Color:       0xff0000,
-			}
-
-			s.ChannelMessageSendEmbed(m.ChannelID, embed)
-			return
 		}
+
+		embed := &discordgo.MessageEmbed{
+			Title:       "Error!",
+			Description: fmt.Sprintf("`%s` is not a valid command!", args[0]),
+			Color:       0xff0000,
+		}
+
+		s.ChannelMessageSendEmbed(m.ChannelID, embed)
+		return
+
 	}
+
+	count := len(c.Commands)
+	var list string
 
 	for name := range c.Commands {
 		cmd := c.Commands[name]
