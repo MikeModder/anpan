@@ -28,11 +28,22 @@ type StatusHandler struct {
 	SwitchInterval string
 }
 
-// Command it's literally just a command
+// Command is the command object
 type Command struct {
 	Name        string
 	Description string
 	OwnerOnly   bool
+	Hidden      bool
 	Permissions int
-	Run         func(*discordgo.Session, *discordgo.MessageCreate, []string)
+	Run         func(context Context, args []string)
+}
+
+// Context holds the data required for command execution
+type Context struct {
+	Session *discordgo.Session
+	Channel *discordgo.Channel
+	Message *discordgo.Message
+	User    *discordgo.User
+	Guild   *discordgo.Guild
+	Member  *discordgo.Member
 }

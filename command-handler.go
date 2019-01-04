@@ -24,11 +24,12 @@ func (c *CommandHandler) GetPrefix() string {
 }
 
 // AddCommand Add a command to the Commands map
-func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, perms int, run func(*discordgo.Session, *discordgo.MessageCreate, []string)) {
+func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run func(Context, []string)) {
 	c.Commands[name] = &Command{
 		Name:        name,
 		Description: desc,
 		OwnerOnly:   owneronly,
+		Hidden:      hidden,
 		Permissions: perms,
 		Run:         run,
 	}
@@ -67,14 +68,14 @@ func (c *CommandHandler) debugLog(out string) {
 // AddDefaultHelpCommand adds the default (library provided) help command to the list of commands
 // TODO: users have to manually call this to add the help command, maybe find a way to add it automatially if no help command is detected?
 func (c *CommandHandler) AddDefaultHelpCommand() {
-	c.AddCommand("help", "Get some help using the bot", false, 0, c.defaultHelpCmd)
+	c.AddCommand("help", "Get some help about using the bot", false, false, 0, c.defaultHelpCmd)
 }
 
 // OnMessage You don't need to call this! Pass this to AddHandler()
 func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Check if the author is a bot, and deny entry if IgnoreBots is true
 	if m.Author.Bot && c.IgnoreBots {
-		c.debugLog("author not bot")
+		c.debugLog("Author is bot")
 		return
 	}
 
@@ -83,7 +84,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 
 	// Check for the prefix. If the content doesn't start with the prefix, return
 	if !strings.HasPrefix(content, c.Prefix) {
-		c.debugLog("no prefix")
+		c.debugLog("No prefix in message")
 		return
 	}
 
@@ -95,25 +96,25 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		// We do, so check permissions
 		if !checkPermissions(s, m.GuildID, m.Author.ID, command.Permissions) {
 			embed := &discordgo.MessageEmbed{
-				Title:       "You don't have the correct permissions!",
+				Title:       "Insufficient Permissions!",
 				Description: "You don't have the correct permissions to run this command!",
 				Color:       0xff0000,
 			}
 
 			s.ChannelMessageSendEmbed(m.ChannelID, embed)
-			c.debugLog("user bad perms")
+			c.debugLog("Insufficient permissions for User")
 			return
 		}
 
 		if !checkPermissions(s, m.GuildID, s.State.User.ID, command.Permissions) {
 			embed := &discordgo.MessageEmbed{
-				Title:       "I don't have the correct permissions!",
+				Title:       "Insufficient Permissions!",
 				Description: "Uh oh, I don't have the right permissions to execute that command for you! Make sure I have the right permissions (ex. Kick Members) then try running the command again!",
 				Color:       0xff0000,
 			}
 
 			s.ChannelMessageSendEmbed(m.ChannelID, embed)
-			c.debugLog("bot bad perms")
+			c.debugLog("Insufficient permissions for Bot")
 			return
 		}
 
@@ -127,22 +128,37 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			}
 
 			s.ChannelMessageSendEmbed(m.ChannelID, embed)
-			c.debugLog("owner only")
+			c.debugLog("Owner only command")
 			return
 		}
 
 		c.debugLog(command.Name)
-		command.Run(s, m, cmd[1:])
+
+		context := Context{
+			Session: s,
+			Message: m.Message,
+			User:    m.Author,
+			//Channel: s.Channel(m.Message.ChannelID),
+			//Guild: s.Guild(context.Message.GuildID),
+			//Member: guild.Members[context.User.ID]
+		}
+
+		command.Run(context, cmd[1:])
 	} else {
 		// We don't :(
-		c.debugLog("not a command")
+		c.debugLog("Unknown command / not even one")
 		return
 	}
 }
 
-func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 	if len(args) >= 1 {
 		if commannd, has := c.Commands[args[0]]; has {
+			// check if the command is hidden
+			if commannd.Hidden {
+				return
+			}
+
 			embed := &discordgo.MessageEmbed{
 				Title:       "Help!",
 				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: `%v`", commannd.Name, commannd.Description, commannd.OwnerOnly),
@@ -151,7 +167,7 @@ func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.Messa
 				},
 			}
 
-			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			context.Session.ChannelMessageSendEmbed(context.Channel.ID, embed)
 			return
 		}
 
@@ -161,7 +177,7 @@ func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.Messa
 			Color:       0xff0000,
 		}
 
-		s.ChannelMessageSendEmbed(m.ChannelID, embed)
+		context.Session.ChannelMessageSendEmbed(context.Channel.ID, embed)
 		return
 
 	}
@@ -171,7 +187,9 @@ func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.Messa
 
 	for name := range c.Commands {
 		cmd := c.Commands[name]
-		list += fmt.Sprintf("`%s - %s`\n", cmd.Name, cmd.Description)
+		if !cmd.Hidden {
+			list += fmt.Sprintf("`%s - %s`\n", cmd.Name, cmd.Description)
+		}
 	}
 
 	embed := &discordgo.MessageEmbed{
@@ -182,5 +200,5 @@ func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.Messa
 		},
 	}
 
-	s.ChannelMessageSendEmbed(m.ChannelID, embed)
+	context.Session.ChannelMessageSendEmbed(context.Channel.ID, embed)
 }
