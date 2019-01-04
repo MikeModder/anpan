@@ -54,7 +54,7 @@ func (c *CommandHandler) IsOwner(id string) bool {
 	return false
 }
 
-// SetDebug Sets debug on or off
+// SetDebug - Sets debug on or off
 func (c *CommandHandler) SetDebug(enabled bool) {
 	c.Debug = enabled
 }
@@ -65,13 +65,13 @@ func (c *CommandHandler) debugLog(out string) {
 	}
 }
 
-// AddDefaultHelpCommand adds the default (library provided) help command to the list of commands
+// AddDefaultHelpCommand - adds the default (library provided) help command to the list of commands
 // TODO: users have to manually call this to add the help command, maybe find a way to add it automatially if no help command is detected?
 func (c *CommandHandler) AddDefaultHelpCommand() {
 	c.AddCommand("help", "Get some help about using the bot", false, false, 0, c.defaultHelpCmd)
 }
 
-// OnMessage You don't need to call this! Pass this to AddHandler()
+// OnMessage - You don't need to call this! Pass this to AddHandler()
 func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Check if the author is a bot, and deny entry if IgnoreBots is true
 	if m.Author.Bot && c.IgnoreBots {
@@ -132,15 +132,30 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			return
 		}
 
-		c.debugLog(command.Name)
+		c.debugLog("Executing " + command.Name)
+
+		channel, err := s.Channel(m.ChannelID)
+		if err != nil {
+			c.debugLog("Couldn't retrieve Channel, continuing...")
+		}
+
+		guild, err := s.Guild(m.GuildID)
+		if err != nil {
+			c.debugLog("Couldn't retrieve Guild, continuing...")
+		}
+
+		member, err := s.State.Member(m.GuildID, m.Author.ID)
+		if err != nil {
+			c.debugLog("Couldn't retrieve Member, continuing...")
+		}
 
 		context := Context{
 			Session: s,
 			Message: m.Message,
 			User:    m.Author,
-			//Channel: s.Channel(m.Message.ChannelID),
-			//Guild: s.Guild(context.Message.GuildID),
-			//Member: guild.Members[context.User.ID]
+			Channel: channel,
+			Guild:   guild,
+			Member:  member,
 		}
 
 		command.Run(context, cmd[1:])
