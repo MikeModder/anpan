@@ -142,15 +142,17 @@ func (c *CommandHandler) defaultHelpCmd(s *discordgo.Session, m *discordgo.Messa
 	var list string
 
 	for name := range c.Commands {
-		cmd := c.Commands[name]
-		list += fmt.Sprintf("`%s - %s`\n", c.Name, c.Description)
+		cmd := c.Commands[name]
+		list += fmt.Sprintf("`%s - %s`\n", cmd.Name, cmd.Description)
 	}
 
 	embed := &discordgo.MessageEmbed{
 		Title:       "Commands:",
 		Description: list,
 		Footer: &discordgo.MessageEmbedFooter{
-			Text: "The bot's prefix is: " + c.Prefix,
+			Text: fmt.Sprintf("The bot's prefix is %s | There are %d commands.", c.Prefix, count),
 		},
 	}
+
+	s.ChannelMessageSendEmbed(m.ChannelID, embed)
 }
