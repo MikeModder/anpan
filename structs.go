@@ -10,7 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// CommandHandler Contains all the data needed for the handler to function/
+// CommandHandler contains all the data needed for the handler to function
 type CommandHandler struct {
 	Prefix           string
 	Owners           []string
@@ -22,17 +22,28 @@ type CommandHandler struct {
 	//UseDefaultHelp   bool
 }
 
-// StatusHandler Struct for status handler; contains entries and the change interval
+// StatusHandler contains status entries and the change interval
 type StatusHandler struct {
 	Entries        []string
 	SwitchInterval string
 }
 
-// Command it's literally just a command
+// Command is the command object
 type Command struct {
 	Name        string
 	Description string
 	OwnerOnly   bool
+	Hidden      bool
 	Permissions int
-	Run         func(*discordgo.Session, *discordgo.MessageCreate, []string)
+	Run         func(context Context, args []string)
+}
+
+// Context holds the data required for command execution
+type Context struct {
+	Session *discordgo.Session
+	Channel *discordgo.Channel
+	Message *discordgo.Message
+	User    *discordgo.User
+	Guild   *discordgo.Guild
+	Member  *discordgo.Member
 }
