@@ -9,7 +9,8 @@ install:
 - go get github.com/bwmarrin/discordgo
 jobs:
   include:
-  - stage: coverage
+	- stage: coverage
+	  script: go test -v -covermode=count -coverprofile=coverage.out
     script: "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
       -repotoken $COVERALLS_TOKEN"
   - stage: build
