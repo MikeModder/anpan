@@ -19,6 +19,7 @@ type CommandHandler struct {
 	IgnoreBots       bool
 	CheckPermissions bool
 	Debug            bool
+	PrerunFunc       func(*discordgo.Session, *discordgo.MessageCreate)
 	//UseDefaultHelp   bool
 }
 

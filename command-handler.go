@@ -23,6 +23,16 @@ func (c *CommandHandler) GetPrefix() string {
 	return c.Prefix
 }
 
+// SetPrerunFunc sets the function to run before the command handler's OnMessage
+func (c *CommandHandler) SetPrerunFunc(prf func(*discordgo.Session, *discordgo.MessageCreate)) {
+	c.PrerunFunc = prf
+}
+
+// ClearPrerunFunc removes the prerun function
+func (c *CommandHandler) ClearPrerunFunc() {
+	c.PrerunFunc = nil
+}
+
 // AddCommand adds a command to the Commands map
 func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run func(Context, []string)) {
 	c.Commands[name] = &Command{
@@ -77,6 +87,10 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if m.Author.Bot && c.IgnoreBots {
 		c.debugLog("Author is bot")
 		return
+	}
+
+	if c.PrerunFunc != nil {
+		c.PrerunFunc(s, m)
 	}
 
 	content := m.Content
