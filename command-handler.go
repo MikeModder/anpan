@@ -196,7 +196,7 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 				},
 			}
 
-			context.Session.ChannelMessageSendEmbed(context.Channel.ID, embed)
+			context.ReplyEmbed(embed)
 			return
 		}
 
@@ -206,7 +206,7 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 			Color:       0xff0000,
 		}
 
-		context.Session.ChannelMessageSendEmbed(context.Channel.ID, embed)
+		context.ReplyEmbed(embed)
 		return
 
 	}
@@ -229,5 +229,5 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 		},
 	}
 
-	context.Session.ChannelMessageSendEmbed(context.Channel.ID, embed)
+	context.ReplyEmbed(embed)
 }
