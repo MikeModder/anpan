@@ -10,10 +10,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func (c *Context) Reply(message string) {
-	c.Session.ChannelMessageSend(c.Message.ChannelID, message)
+func (c *Context) Reply(message string) (*discordgo.Message, error) {
+	return c.Session.ChannelMessageSend(c.Message.ChannelID, message)
 }
 
-func (c *Context) ReplyEmbed(embed *discordgo.MessageEmbed) {
-	c.Session.ChannelMessageSendEmbed(c.Message.ChannelID, embed)
+func (c *Context) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
+	return c.Session.ChannelMessageSendEmbed(c.Message.ChannelID, embed)
 }
