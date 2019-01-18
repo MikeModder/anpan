@@ -137,7 +137,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			// It's an owner-only command, and the user wasn't on the owners list
 			embed := &discordgo.MessageEmbed{
 				Title:       "You can't run that command!",
-				Description: "Sorry, on the bot owner(s) can run that command!",
+				Description: "Sorry, only the bot owner(s) can run that command!",
 				Color:       0xff0000,
 			}
 
