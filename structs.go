@@ -12,7 +12,7 @@ import (
 
 // CommandHandler contains all the data needed for the handler to function
 type CommandHandler struct {
-	Prefix           string
+	Prefixes         []string
 	Owners           []string
 	StatusHandler    StatusHandler
 	Commands         map[string]*Command

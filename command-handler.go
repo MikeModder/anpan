@@ -13,14 +13,14 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// SetPrefix changes the prefix
-func (c *CommandHandler) SetPrefix(prefix string) {
-	c.Prefix = prefix
+// AddPrefix adds a single prefix to the prefix array
+func (c *CommandHandler) AddPrefix(prefix string) {
+	c.Prefixes = append(c.Prefixes, prefix)
 }
 
-// GetPrefix gets the current prefix
-func (c *CommandHandler) GetPrefix() string {
-	return c.Prefix
+// GetPrefixes gets the current prefixes
+func (c *CommandHandler) GetPrefixes() []string {
+	return c.Prefixes
 }
 
 // SetPrerunFunc sets the function to run before the command handler's OnMessage
@@ -96,13 +96,17 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	content := m.Content
 	c.debugLog(content)
 
-	// Check for the prefix. If the content doesn't start with the prefix, return
-	if !strings.HasPrefix(content, c.Prefix) {
-		c.debugLog("No prefix in message")
-		return
+	// Check for one of the prefixes. If the content doesn't start with one of the prefixes, return
+	var prefix string
+	for _, prefix := range c.Prefixes {
+		if !strings.HasPrefix(content, prefix) {
+			c.debugLog("No prefix in message")
+			return
+		}
 	}
+	// Check for the prefix. If the content doesn't start with the prefix, return
 
-	cmd := strings.Split(strings.TrimPrefix(content, c.Prefix), " ")
+	cmd := strings.Split(strings.TrimPrefix(content, prefix), " ")
 	c.debugLog(cmd[0])
 
 	// Check and see if we have a command by that name
@@ -115,7 +119,9 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 				Color:       0xff0000,
 			}
 
-			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			if !command.Hidden {
+				s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			}
 			c.debugLog("Insufficient permissions for User")
 			return
 		}
@@ -126,8 +132,9 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 				Description: "Uh oh, I don't have the right permissions to execute that command for you! Make sure I have the right permissions (ex. Kick Members) then try running the command again!",
 				Color:       0xff0000,
 			}
-
-			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			if !command.Hidden {
+				s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			}
 			c.debugLog("Insufficient permissions for Bot")
 			return
 		}
@@ -141,7 +148,9 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 				Color:       0xff0000,
 			}
 
-			s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			if !command.Hidden {
+				s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			}
 			c.debugLog("Owner only command")
 			return
 		}
@@ -192,7 +201,7 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 				Title:       "Help!",
 				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: `%v`", commannd.Name, commannd.Description, commannd.OwnerOnly),
 				Footer: &discordgo.MessageEmbedFooter{
-					Text: fmt.Sprintf("The bot's prefix is %s", c.Prefix),
+					Text: fmt.Sprintf("The bot's prefixes are %s", c.Prefixes),
 				},
 			}
 
