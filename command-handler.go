@@ -13,11 +13,20 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// AddPrefix adds a single prefix to the prefix array
+// AddPrefix adds a single prefix to the prefixes
 func (c *CommandHandler) AddPrefix(prefix string) {
 	c.Prefixes = append(c.Prefixes, prefix)
 }
 
+// RemovePrefix removes a single prefix from the prefixes
+func (c *CommandHandler) RemovePrefix(prefix string) {
+	for i, v := range c.Prefixes {
+        if v == prefix {
+            c.Prefixes = append(c.Prefixes[:i], c.Prefixes[i+1:]...)
+            break
+        }
+    }
+}
 // SetPrefixes changes all prefixes
 func (c *CommandHandler) SetPrefixes(prefixes []string) {
 	c.Prefixes = prefixes
