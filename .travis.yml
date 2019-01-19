@@ -1,20 +1,17 @@
 language: go
-go:
-- '1.11'
-- '1.10'
-- master
+go: 
+ - stable
 install:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
 - go get github.com/bwmarrin/discordgo
 jobs:
   include:
-	- stage: coverage
-	  script: go test -v -covermode=count -coverprofile=coverage.out
-    script: "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
-      -repotoken $COVERALLS_TOKEN"
-  - stage: build
-    script: go build
+    - stage: coverage
+      script: go test -v -covermdoe=count -coverprofile=coverage.out
+      script: goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+    - stage: build
+      script: go build
 stages:
 - coverage
 - build
