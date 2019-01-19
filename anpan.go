@@ -16,9 +16,9 @@ package anpan
  */
 
 // NewCommandHandler Creates a new command handler
-func NewCommandHandler(prefix string, owners []string, ignoreBots, checkPerms bool) CommandHandler {
+func NewCommandHandler(prefixes []string, owners []string, ignoreBots, checkPerms bool) CommandHandler {
 	return CommandHandler{
-		Prefix:           prefix,
+		Prefixes:         prefixes,
 		Owners:           owners,
 		StatusHandler:    NewDefaultStatusHandler(),
 		Commands:         make(map[string]*Command),
