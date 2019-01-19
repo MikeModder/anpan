@@ -113,7 +113,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 
 	// Check for one of the prefixes. If the content doesn't start with one of the prefixes, return
 	var prefix string
-	for _, prefix := range c.Prefixes {
+	for _, prefix = range c.Prefixes {
 		if !strings.HasPrefix(content, prefix) {
 			c.debugLog("No prefix in message")
 			return
