@@ -248,7 +248,7 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 		Title:       "Commands:",
 		Description: list,
 		Footer: &discordgo.MessageEmbedFooter{
-			Text: fmt.Sprintf("The bot's prefix is %s | There are %d commands.", c.Prefix, count),
+			Text: fmt.Sprintf("The bot's prefixes are %s | There are %d commands.", c.Prefixes, count),
 		},
 	}
 
