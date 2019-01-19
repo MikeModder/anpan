@@ -8,7 +8,7 @@ install:
 jobs:
   include:
     - stage: coverage
-      script: go test -v -covermdoe=count -coverprofile=coverage.out && goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+      script: go test -v -covermode=count -coverprofile=coverage.out && goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
     - stage: build
       script: go build
 stages:
