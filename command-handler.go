@@ -18,6 +18,11 @@ func (c *CommandHandler) AddPrefix(prefix string) {
 	c.Prefixes = append(c.Prefixes, prefix)
 }
 
+// SetPrefixes changes all prefixes
+func (c *CommandHandler) SetPrefixes(prefixes []string) {
+	c.Prefixes = prefixes
+}
+
 // GetPrefixes gets the current prefixes
 func (c *CommandHandler) GetPrefixes() []string {
 	return c.Prefixes
