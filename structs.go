@@ -16,6 +16,7 @@ type CommandHandler struct {
 	Owners           []string
 	StatusHandler    StatusHandler
 	Commands         map[string]*Command
+	MentionPrefix    bool
 	IgnoreBots       bool
 	CheckPermissions bool
 	Debug            bool

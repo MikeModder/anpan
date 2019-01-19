@@ -113,13 +113,23 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 
 	// Check for one of the prefixes. If the content doesn't start with one of the prefixes, return
 	var prefix string
-	for _, prefix := range c.Prefixes {
-		if !strings.HasPrefix(content, prefix) {
-			c.debugLog("No prefix in message")
-			return
+	var mention bool
+
+	if c.MentionPrefix {
+		if strings.HasPrefix(content, "<@"+s.State.User.ID+">") {
+			prefix = "mention"
+			mention = true
 		}
 	}
-	// Check for the prefix. If the content doesn't start with the prefix, return
+
+	if !mention {
+		for _, prefix := range c.Prefixes {
+			if !strings.HasPrefix(content, prefix) {
+				c.debugLog("No prefix in message")
+				return
+			}
+		}
+	}
 
 	cmd := strings.Split(strings.TrimPrefix(content, prefix), " ")
 	c.debugLog(cmd[0])
