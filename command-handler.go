@@ -39,7 +39,7 @@ func (c *CommandHandler) GetPrefixes() []string {
 }
 
 // SetPrerunFunc sets the function to run before the command handler's OnMessage
-func (c *CommandHandler) SetPrerunFunc(prf func(*discordgo.Session, *discordgo.MessageCreate)) {
+func (c *CommandHandler) SetPrerunFunc(prf func(*discordgo.Session, *discordgo.MessageCreate, string, []string)) {
 	c.PrerunFunc = prf
 }
 
@@ -102,10 +102,6 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if m.Author.Bot && c.IgnoreBots {
 		c.debugLog("Author is bot")
 		return
-	}
-
-	if c.PrerunFunc != nil {
-		c.PrerunFunc(s, m)
 	}
 
 	content := m.Content
@@ -171,6 +167,11 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		}
 
 		c.debugLog("Executing " + command.Name)
+
+		c.debugLog("Firing PrerunFunc")
+		if c.PrerunFunc != nil {
+			c.PrerunFunc(s, m, command.Name, cmd[1:])
+		}
 
 		channel, err := s.Channel(m.ChannelID)
 		if err != nil {

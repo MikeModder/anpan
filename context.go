@@ -10,12 +10,12 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
- // Reply directly replies with a message
+// Reply directly replies with a message
 func (c *Context) Reply(message string) (*discordgo.Message, error) {
 	return c.Session.ChannelMessageSend(c.Message.ChannelID, message)
 }
 
- // Reply directly replies with a message
+// ReplyEmbed directly replies with a embed
 func (c *Context) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
 	return c.Session.ChannelMessageSendEmbed(c.Message.ChannelID, embed)
 }
