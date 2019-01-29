@@ -2,18 +2,10 @@ language: go
 go: 
  - stable
 install:
-- go get golang.org/x/tools/cmd/cover
-- go get github.com/mattn/goveralls
 - go get github.com/bwmarrin/discordgo
 jobs:
   include:
-    - stage: coverage
-      script: go test -v -covermode=count -coverprofile=coverage.out && goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
     - stage: build
       script: go build
 stages:
-- coverage
 - build
-env:
-  global:
-    secure: uA2kNzRa+sf/vvuEXI0obodWI9o5Yum6LPDRT5MGnvHX8gneFY0C8AloHC13Kr54qll9EOcngKCpn3N3wEN8yyNSctXbCw+GVeaOQVrdXi0d3ZKRO289tHM95Mw0qYA5bXk87xc52pHf3Wo8LxWzDULS0+VJW53AjPxPBqVGSFajsTaEKiQvGWbiwgrwGfgaIX4F/r/O+2xzxb1YLdyCGDFh6eS8Y8EPsaldZH330hZr8Zf31KA0z4pN8Rv8XvDNmAQKZG/Vy0EI0AuOR8xPJbTGfzkOX7VSL8SAk1kr06kxgEBDlJRtTpwtjnl7Jq1upYgKNVexCbaVJi96crRpsytPlQW/STFgD+n1ezGnRPGyIrYgEfL6oj88ilv1i3GUvO4rO5nroiy5HcFYBKl9k9kwMh/MJ/pv5zFVYVXTbAi+4X7p0mN4UMw35UTO5dldDerufPb1/VBQ1iSFmth9sobca08ri0jJC31gPF65ZIoLOGq3sDNs9ED82IsZUHS1COnm//zi7VhLBZagXEWFWRpWDslBaiS+LCf/xJNCJFnBSxbr5fhW8EK11z3FGfbdbzxjCTpG3xgMn0pxnAH5jZgp600WmuZThQuJUrHf7YFRZSUdYhayl7kMhh/g+loRAvHdx5niEKTNQemGAA/n5jpxRKOcq5fHvhxOhdiW3U0=
