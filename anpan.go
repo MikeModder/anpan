@@ -11,7 +11,7 @@ package anpan
  * 	- Handling automatic setting of playing status.
  *	- Permission checking built into the handler.
  * 	- Owner only commands.
- *  - Hidden commands.
+ *	- Hidden commands.
  *
  * Anpan (c) 2018 MikeModder/MikeModder007
  */
