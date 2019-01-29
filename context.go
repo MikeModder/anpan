@@ -22,7 +22,7 @@ func (c *Context) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message,
 	return c.Session.ChannelMessageSendEmbed(c.Channel.ID, embed)
 }
 
-// ReplyFile directly replies with a file.
+// ReplyFile directly replies with a file, but not with a message.
 func (c *Context) ReplyFile(filename string, file io.Reader) (*discordgo.Message, error) {
 	return c.Session.ChannelFileSend(c.Channel.ID, filename, file)
 }
