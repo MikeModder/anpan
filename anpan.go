@@ -1,21 +1,22 @@
 package anpan
 
 /* Package anpan:
- * Command handler for DiscordGo
+ * Command handler for DiscordGo.
  * Inspired by:
  *  - Clinet (https://github.com/JoshuaDoes/clinet)
  *  - Harmony (https://github.com/superwhiskers/harmony)
  *
  * Main differences from harmony:
- * 	- Built in help command - (maybe? I need to look more into this)
- * 	- Handling automatic setting of playing status
- *	- Permission checking built into the handler
- * 	- Owner only command
+ * 	- Built in help command - (maybe? I need to look more into this).
+ * 	- Handling automatic setting of playing status.
+ *	- Permission checking built into the handler.
+ * 	- Owner only commands.
+ *  - Hidden commands.
  *
  * Anpan (c) 2018 MikeModder/MikeModder007
  */
 
-// NewCommandHandler Creates a new command handler
+// NewCommandHandler Creates a new command handler.
 func NewCommandHandler(prefixes []string, owners []string, ignoreBots, checkPerms bool) CommandHandler {
 	return CommandHandler{
 		Prefixes:         prefixes,
@@ -27,7 +28,7 @@ func NewCommandHandler(prefixes []string, owners []string, ignoreBots, checkPerm
 	}
 }
 
-// NewStatusHandler Creates a new status handler
+// NewStatusHandler Creates a new status handler.
 func NewStatusHandler(entries []string, interval string) StatusHandler {
 	return StatusHandler{
 		Entries:        entries,
@@ -35,7 +36,7 @@ func NewStatusHandler(entries []string, interval string) StatusHandler {
 	}
 }
 
-// NewDefaultStatusHandler Creates a new status handler with some "default" settings
+// NewDefaultStatusHandler Creates a new status handler with some "default" settings.
 func NewDefaultStatusHandler() StatusHandler {
 	return NewStatusHandler([]string{
 		"Powered by Golang!",

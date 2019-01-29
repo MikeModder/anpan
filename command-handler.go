@@ -1,7 +1,7 @@
 package anpan
 
 /* command-handler.go:
- * Contains the main code of the command handler
+ * Contains the main code of the command handler.
  *
  * Anpan (c) 2018 MikeModder/MikeModder007
  */
@@ -13,12 +13,12 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// AddPrefix adds a single prefix to the prefixes
+// AddPrefix adds a single prefix to the prefixes.
 func (c *CommandHandler) AddPrefix(prefix string) {
 	c.Prefixes = append(c.Prefixes, prefix)
 }
 
-// RemovePrefix removes a single prefix from the prefixes
+// RemovePrefix removes a single prefix from the prefixes.
 func (c *CommandHandler) RemovePrefix(prefix string) {
 	for i, v := range c.Prefixes {
 		if v == prefix {
@@ -28,27 +28,27 @@ func (c *CommandHandler) RemovePrefix(prefix string) {
 	}
 }
 
-// SetPrefixes changes all prefixes
+// SetPrefixes changes all prefixes.
 func (c *CommandHandler) SetPrefixes(prefixes []string) {
 	c.Prefixes = prefixes
 }
 
-// GetPrefixes gets the current prefixes
+// GetPrefixes gets the current prefixes.
 func (c *CommandHandler) GetPrefixes() []string {
 	return c.Prefixes
 }
 
-// SetPrerunFunc sets the function to run before the command handler's OnMessage
+// SetPrerunFunc sets the function to run before the command handler's OnMessage.
 func (c *CommandHandler) SetPrerunFunc(prf func(*discordgo.Session, *discordgo.MessageCreate, string, []string)) {
 	c.PrerunFunc = prf
 }
 
-// ClearPrerunFunc removes the prerun function
+// ClearPrerunFunc removes the prerun function.
 func (c *CommandHandler) ClearPrerunFunc() {
 	c.PrerunFunc = nil
 }
 
-// AddCommand adds a command to the Commands map
+// AddCommand adds a command to the Commands map.
 func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run func(Context, []string)) {
 	c.Commands[name] = &Command{
 		Name:        name,
@@ -60,7 +60,7 @@ func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bo
 	}
 }
 
-// RemoveCommand removes a command from the Commands map
+// RemoveCommand removes a command from the Commands map.
 func (c *CommandHandler) RemoveCommand(name string) {
 	if _, has := c.Commands[name]; has {
 		delete(c.Commands, name)
@@ -68,7 +68,7 @@ func (c *CommandHandler) RemoveCommand(name string) {
 	return
 }
 
-// IsOwner checks if the given user ID is one of the owners
+// IsOwner checks if the given user ID is one of the owners.
 func (c *CommandHandler) IsOwner(id string) bool {
 	for _, o := range c.Owners {
 		if id == o {
@@ -79,7 +79,7 @@ func (c *CommandHandler) IsOwner(id string) bool {
 	return false
 }
 
-// SetDebug sets debug on or off
+// SetDebug sets debug on or off.
 func (c *CommandHandler) SetDebug(enabled bool) {
 	c.Debug = enabled
 }
@@ -90,15 +90,15 @@ func (c *CommandHandler) debugLog(out string) {
 	}
 }
 
-// AddDefaultHelpCommand adds the default (library provided) help command to the list of commands
+// AddDefaultHelpCommand adds the default (library provided) help command to the list of commands.
 // TODO: users have to manually call this to add the help command, maybe find a way to add it automatially if no help command is detected?
 func (c *CommandHandler) AddDefaultHelpCommand() {
 	c.AddCommand("help", "Get some help about using the bot", false, false, 0, c.defaultHelpCmd)
 }
 
-// OnMessage - You don't need to call this! Pass this to AddHandler()
+// OnMessage - You don't need to call this! Pass this to AddHandler().
 func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Check if the author is a bot, and deny entry if IgnoreBots is true
+	// Check if the author is a bot, and deny entry if IgnoreBots is true.
 	if m.Author.Bot && c.IgnoreBots {
 		c.debugLog("Author is bot")
 		return
@@ -107,7 +107,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	content := m.Content
 	c.debugLog(content)
 
-	// Check for one of the prefixes. If the content doesn't start with one of the prefixes, return
+	// Check for one of the prefixes. If the content doesn't start with one of the prefixes, return.
 	var prefix string
 	for _, prefix = range c.Prefixes {
 		if !strings.HasPrefix(content, prefix) {
@@ -115,14 +115,14 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			return
 		}
 	}
-	// Check for the prefix. If the content doesn't start with the prefix, return
+	// Check for the prefix. If the content doesn't start with the prefix, return.
 
 	cmd := strings.Split(strings.TrimPrefix(content, prefix), " ")
 	c.debugLog(cmd[0])
 
-	// Check and see if we have a command by that name
+	// Check and see if we have a command by that name.
 	if command, exist := c.Commands[cmd[0]]; exist {
-		// We do, so check permissions
+		// We do, so check permissions.
 		if !checkPermissions(s, m.GuildID, m.Author.ID, command.Permissions) {
 			embed := &discordgo.MessageEmbed{
 				Title:       "Insufficient Permissions!",
@@ -150,23 +150,24 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			return
 		}
 
-		// Check if it's an owner-only command, and if it is make sure the author is an owner
+		// Check if it's an owner-only command, and if it is make sure the author is an owner.
 		if command.OwnerOnly && !c.IsOwner(m.Author.ID) {
-			// It's an owner-only command, and the user wasn't on the owners list
+			// It's an owner-only command, and the user wasn't on the owners list.
 			embed := &discordgo.MessageEmbed{
 				Title:       "You can't run that command!",
 				Description: "Sorry, only the bot owner(s) can run that command!",
 				Color:       0xff0000,
 			}
 
+			// If command isn't hidden, send a message.
 			if !command.Hidden {
 				s.ChannelMessageSendEmbed(m.ChannelID, embed)
 			}
-			c.debugLog("Owner only command")
+			c.debugLog("Owner only command.")
 			return
 		}
 
-		c.debugLog("Executing " + command.Name)
+		c.debugLog(fmt.Sprintf("Executing %s.", command.Name)
 
 		c.debugLog("Firing PrerunFunc")
 		if c.PrerunFunc != nil {
@@ -200,7 +201,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		command.Run(context, cmd[1:])
 	} else {
 		// We don't :(
-		c.debugLog("Unknown command / not even one")
+		c.debugLog("Unknown command / not even one.")
 		return
 	}
 }
@@ -208,16 +209,20 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 	if len(args) >= 1 {
 		if commannd, has := c.Commands[args[0]]; has {
-			// check if the command is hidden
+			// Check if the command is hidden.
 			if commannd.Hidden {
 				return
 			}
 
+			// Proper English is always fun.
+			var owneronlystring string
+			if commannd.OwnerOnly {	owneronlystring = "Yes"	} else { owneronlystring = "No" }
+
 			embed := &discordgo.MessageEmbed{
 				Title:       "Help!",
-				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: `%v`", commannd.Name, commannd.Description, commannd.OwnerOnly),
+				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: **%s**", commannd.Name, commannd.Description, owneronlystring),
 				Footer: &discordgo.MessageEmbedFooter{
-					Text: fmt.Sprintf("The bot's prefixes are %s", c.Prefixes),
+					Text: fmt.Sprintf("The bot's prefixes are %s.", c.Prefixes),
 				},
 			}
 

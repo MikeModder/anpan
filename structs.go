@@ -1,7 +1,7 @@
 package anpan
 
 /* structs.go:
- * Contains the various structs used in anpan
+ * Contains the various structs used in anpan.
  *
  * Anpan (c) 2018 MikeModder/MikeModder007
  */
@@ -10,7 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// CommandHandler contains all the data needed for the handler to function
+// CommandHandler contains all the data needed for the handler to function.
 type CommandHandler struct {
 	Prefixes         []string
 	Owners           []string
@@ -23,7 +23,7 @@ type CommandHandler struct {
 	//UseDefaultHelp   bool
 }
 
-// StatusHandler contains status entries and the change interval
+// StatusHandler contains status entries and the change interval.
 type StatusHandler struct {
 	Entries        []string
 	SwitchInterval string
@@ -39,7 +39,7 @@ type Command struct {
 	Run         func(context Context, args []string)
 }
 
-// Context holds the data required for command execution
+// Context holds the data required for command execution.
 type Context struct {
 	Session *discordgo.Session
 	Channel *discordgo.Channel
