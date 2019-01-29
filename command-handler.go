@@ -167,7 +167,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			return
 		}
 
-		c.debugLog(fmt.Sprintf("Executing %s.", command.Name)
+		c.debugLog(fmt.Sprintf("Executing %s.", command.Name))
 
 		c.debugLog("Firing PrerunFunc")
 		if c.PrerunFunc != nil {
@@ -216,7 +216,11 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 
 			// Proper English is always fun.
 			var owneronlystring string
-			if commannd.OwnerOnly {	owneronlystring = "Yes"	} else { owneronlystring = "No" }
+			if commannd.OwnerOnly {
+				owneronlystring = "Yes"
+			} else {
+				owneronlystring = "No"
+			}
 
 			embed := &discordgo.MessageEmbed{
 				Title:       "Help!",
