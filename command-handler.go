@@ -93,7 +93,7 @@ func (c *CommandHandler) debugLog(out string) {
 // AddDefaultHelpCommand adds the default (library provided) help command to the list of commands.
 // TODO: users have to manually call this to add the help command, maybe find a way to add it automatially if no help command is detected?
 func (c *CommandHandler) AddDefaultHelpCommand() {
-	c.AddCommand("help", "Get some help about using the bot", false, false, 0, c.defaultHelpCmd)
+	c.AddCommand("help", "Get some help about using the bot.", false, false, 0, c.defaultHelpCmd)
 }
 
 // OnMessage - You don't need to call this! Pass this to AddHandler().
@@ -199,6 +199,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		}
 
 		command.Run(context, cmd[1:])
+		c.debugLog(fmt.Sprintf("Execution of %s done.", command.Name))
 	} else {
 		// We don't :(
 		c.debugLog("Unknown command / not even one.")
@@ -251,15 +252,44 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 	for name := range c.Commands {
 		cmd := c.Commands[name]
 		if !cmd.Hidden {
-			list += fmt.Sprintf("`%s - %s`\n", cmd.Name, cmd.Description)
+			list += fmt.Sprintf("**%s** - `%s`\n", cmd.Name, cmd.Description)
 		}
+	}
+
+	var footer strings.Builder
+
+	//"The bot's prefixes are %s | There are %d commands." fmt.Sprintf(footer, c.Prefixes, count)
+
+	// Grammar is always fun.
+	if count == 1 {
+		footer.WriteString("There is 1 command.")
+	} else {
+		footer.WriteString(fmt.Sprintf("There are %d commands.", count))
+	}
+
+	footer.WriteString(" | ")
+
+	if len(c.Prefixes) == 1 {
+		footer.WriteString(fmt.Sprintf("The bot's prefix is %s.", c.Prefixes[0]))
+	} else {
+		prefixes := strings.Builder{}
+
+		for i, prefix := range c.Prefixes {
+			if i+1 == len(c.Prefixes) {
+				prefixes.WriteString(fmt.Sprintf("and %s.", prefix))
+			} else {
+				prefixes.WriteString(fmt.Sprintf("%s, ", prefix))
+			}
+		}
+
+		footer.WriteString(fmt.Sprintf("The bot's prefixes are %s.", prefixes.String()))
 	}
 
 	embed := &discordgo.MessageEmbed{
 		Title:       "Commands:",
 		Description: list,
 		Footer: &discordgo.MessageEmbedFooter{
-			Text: fmt.Sprintf("The bot's prefixes are %s | There are %d commands.", c.Prefixes, count),
+			Text: footer.String(),
 		},
 	}
 
