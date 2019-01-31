@@ -3,7 +3,7 @@ package anpan
 /* command-handler.go:
  * Contains the main code of the command handler.
  *
- * Anpan (c) 2018 MikeModder/MikeModder007
+ * Anpan (c) 2019 MikeModder/MikeModder007
  */
 
 import (

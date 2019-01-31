@@ -13,7 +13,7 @@ package anpan
  * 	- Owner only commands.
  *	- Hidden commands.
  *
- * Anpan (c) 2018 MikeModder/MikeModder007
+ * Anpan (c) 2019 MikeModder/MikeModder007
  */
 
 // NewCommandHandler Creates a new command handler.

@@ -3,7 +3,7 @@ package anpan
 /* status-handler.go:
  * Contains the code for the built-in status handler.
  *
- * Anpan (c) 2018 MikeModder/MikeModder007
+ * Anpan (c) 2019 MikeModder/MikeModder007
  */
 
 import (

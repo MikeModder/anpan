@@ -3,7 +3,7 @@ package anpan
 /* structs.go:
  * Contains the various structs used in anpan.
  *
- * Anpan (c) 2018 MikeModder/MikeModder007
+ * Anpan (c) 2019 MikeModder/MikeModder007
  */
 
 import (

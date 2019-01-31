@@ -3,7 +3,7 @@ package anpan
 /* helpers.go:
  * Contains helper functions to make my life easier sometimes.
  *
- * Anpan (c) 2018 MikeModder/MikeModder007
+ * Anpan (c) 2019 MikeModder/MikeModder007
  */
 
 import (
