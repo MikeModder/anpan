@@ -7,7 +7,7 @@ package anpan
  *  - Harmony (https://github.com/superwhiskers/harmony)
  *
  * Main differences from harmony:
- * 	- Built in help command - (maybe? I need to look more into this).
+ * 	- Built in help command
  * 	- Handling automatic setting of playing status.
  *	- Permission checking built into the handler.
  * 	- Owner only commands.
