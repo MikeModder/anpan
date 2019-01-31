@@ -29,7 +29,7 @@ type StatusHandler struct {
 	SwitchInterval string
 }
 
-// Command is the command object
+// Command is the command object.
 type Command struct {
 	Name        string
 	Description string
