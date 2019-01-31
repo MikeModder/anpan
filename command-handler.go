@@ -110,7 +110,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	// Check for one of the prefixes. If the content doesn't start with one of the prefixes, return.
 	var prefix string
 	var has bool // false by default
-	for i := 0; i < len(c,Prefixes); i++ {
+	for i := 0; i < len(c.Prefixes); i++ {
 		prefix = c.Prefixes[i]
 		if strings.HasPrefix(content, prefix) {
 			has = true
@@ -122,7 +122,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if !has {
 		return
 	}
-	
+
 	// Since we just checked for a prefix, now we need to trim off the prefix
 	cmd := strings.Split(strings.TrimPrefix(content, prefix), " ")
 	c.debugLog(cmd[0])
