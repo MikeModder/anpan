@@ -59,7 +59,7 @@ func (c *CommandHandler) SetSuccessFunction(f func(Context, *Command)) {
 }
 
 // AddCommand adds a command to the Commands map.
-func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run func(Context, []string) error) {
+func (c *CommandHandler) AddCommand(name, desc string, owneronly, hidden bool, perms int, cmdtype CommandType, run func(Context, []string) error) {
 	c.Commands[name] = &Command{
 		Name:        name,
 		Description: desc,
@@ -67,6 +67,7 @@ func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bo
 		Hidden:      hidden,
 		Permissions: perms,
 		Run:         run,
+		Type:        cmdtype,
 	}
 }
 
@@ -103,7 +104,7 @@ func (c *CommandHandler) debugLog(out string) {
 // AddDefaultHelpCommand adds the default (library provided) help command to the list of commands.
 // TODO: users have to manually call this to add the help command, maybe find a way to add it automatially if no help command is detected?
 func (c *CommandHandler) AddDefaultHelpCommand() {
-	c.AddCommand("help", "Get some help about using the bot.", false, false, 0, c.defaultHelpCmd)
+	c.AddCommand("help", "Get some help about using the bot.", false, false, 0, CommandTypeEverywhere, c.defaultHelpCmd)
 }
 
 // OnMessage - You don't need to call this! Pass this to AddHandler().
