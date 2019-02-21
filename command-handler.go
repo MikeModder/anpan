@@ -254,12 +254,15 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		}
 
 		err = command.Run(context, cmd[1:])
-		if err != nil {
+		if err != nil && c.ErrorFunction != nil {
 			c.ErrorFunction(context, command, err)
 		} else if c.SuccessFunction != nil {
 			c.SuccessFunction(context, command)
 		} else {
 			c.debugLog(fmt.Sprintf("Execution of %s done.", command.Name))
+			if err != nil {
+				c.debugLog(fmt.Sprintf("However, it errored: %s", err.Error()))
+			}
 		}
 	} else {
 		// We don't :(
