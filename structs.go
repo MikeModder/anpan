@@ -19,7 +19,8 @@ type CommandHandler struct {
 	IgnoreBots       bool
 	CheckPermissions bool
 	Debug            bool
-	PrerunFunc       func(*discordgo.Session, *discordgo.MessageCreate, string, []string)
+	PrerunFunc       PrerunFunc
+	OnErrorFunc      OnErrorFunc
 	//UseDefaultHelp   bool
 }
 
@@ -36,7 +37,7 @@ type Command struct {
 	OwnerOnly   bool
 	Hidden      bool
 	Permissions int
-	Run         func(context Context, args []string)
+	Run         CommandRunFunc
 }
 
 // Context holds the data required for command execution.
@@ -48,3 +49,14 @@ type Context struct {
 	Guild   *discordgo.Guild
 	Member  *discordgo.Member
 }
+
+/* These are types, not structs, but this is the best place to put them */
+
+// PrerunFunc is the type for the function that can be run before command execution.
+type PrerunFunc func(*discordgo.Session, *discordgo.MessageCreate, string, []string) bool
+
+// OnErrorFunc is the type for the function that can be run.
+type OnErrorFunc func(Context, string, error)
+
+// CommandRunFunc is a command's run function
+type CommandRunFunc func(Context, []string) error

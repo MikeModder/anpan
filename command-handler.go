@@ -39,7 +39,7 @@ func (c *CommandHandler) GetPrefixes() []string {
 }
 
 // SetPrerunFunc sets the function to run before the command handler's OnMessage.
-func (c *CommandHandler) SetPrerunFunc(prf func(*discordgo.Session, *discordgo.MessageCreate, string, []string)) {
+func (c *CommandHandler) SetPrerunFunc(prf PrerunFunc) {
 	c.PrerunFunc = prf
 }
 
@@ -48,8 +48,18 @@ func (c *CommandHandler) ClearPrerunFunc() {
 	c.PrerunFunc = nil
 }
 
+// SetOnErrorFunc sets the function to run when a command returns an error
+func (c *CommandHandler) SetOnErrorfunc(oef OnErrorFunc) {
+	c.OnErrorFunc = oef
+}
+
+// ClearOnErrorFunc clears the onerror function
+func (c *CommandHandler) ClearOnErrorFunc() {
+	c.OnErrorFunc = nil
+}
+
 // AddCommand adds a command to the Commands map.
-func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run func(Context, []string)) {
+func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run CommandRunFunc) {
 	c.Commands[name] = &Command{
 		Name:        name,
 		Description: desc,
@@ -178,7 +188,11 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 
 		c.debugLog("Firing PrerunFunc")
 		if c.PrerunFunc != nil {
-			c.PrerunFunc(s, m, command.Name, cmd[1:])
+			// Run the user's prerun function
+			// if it returns true, then stop here.
+			if c.PrerunFunc(s, m, command.Name, cmd[1:]) {
+				return
+			}
 		}
 
 		channel, err := s.Channel(m.ChannelID)
@@ -205,8 +219,12 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			Member:  member,
 		}
 
-		command.Run(context, cmd[1:])
-		c.debugLog(fmt.Sprintf("Execution of %s done.", command.Name))
+		err = command.Run(context, cmd[1:])
+		if err != nil && c.OnErrorFunc != nil {
+			// Run the user's OnErrorFunc
+			c.OnErrorFunc(context, cmd[0], err)
+		}
+
 	} else {
 		// We don't :(
 		c.debugLog("Unknown command / not even one.")
@@ -214,12 +232,12 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	}
 }
 
-func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
+func (c *CommandHandler) defaultHelpCmd(context Context, args []string) error {
 	if len(args) >= 1 {
 		if commannd, has := c.Commands[args[0]]; has {
 			// Check if the command is hidden.
 			if commannd.Hidden {
-				return
+				return nil
 			}
 
 			// Proper English is always fun.
@@ -239,7 +257,7 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 			}
 
 			context.ReplyEmbed(embed)
-			return
+			return nil
 		}
 
 		embed := &discordgo.MessageEmbed{
@@ -249,7 +267,7 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 		}
 
 		context.ReplyEmbed(embed)
-		return
+		return nil
 
 	}
 
@@ -301,4 +319,5 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 	}
 
 	context.ReplyEmbed(embed)
+	return nil
 }

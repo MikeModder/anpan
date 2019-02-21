@@ -16,7 +16,7 @@ package anpan
  * Anpan (c) 2019 MikeModder/MikeModder007
  */
 
-// NewCommandHandler Creates a new command handler.
+// NewCommandHandler creates a new command handler.
 func NewCommandHandler(prefixes []string, owners []string, ignoreBots, checkPerms bool) CommandHandler {
 	return CommandHandler{
 		Prefixes:         prefixes,
@@ -28,7 +28,7 @@ func NewCommandHandler(prefixes []string, owners []string, ignoreBots, checkPerm
 	}
 }
 
-// NewStatusHandler Creates a new status handler.
+// NewStatusHandler creates a new status handler.
 func NewStatusHandler(entries []string, interval string) StatusHandler {
 	return StatusHandler{
 		Entries:        entries,
@@ -36,7 +36,7 @@ func NewStatusHandler(entries []string, interval string) StatusHandler {
 	}
 }
 
-// NewDefaultStatusHandler Creates a new status handler with some "default" settings.
+// NewDefaultStatusHandler creates a new status handler with some "default" settings.
 func NewDefaultStatusHandler() StatusHandler {
 	return NewStatusHandler([]string{
 		"Powered by Golang!",
