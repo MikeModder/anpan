@@ -49,7 +49,7 @@ func (c *CommandHandler) ClearPrerunFunc() {
 }
 
 // SetOnErrorFunc sets the function to run when a command returns an error
-func (c *CommandHandler) SetOnErrorfunc(oef OnErrorFunc) {
+func (c *CommandHandler) SetOnErrorFunc(oef OnErrorFunc) {
 	c.OnErrorFunc = oef
 }
 
