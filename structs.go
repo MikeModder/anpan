@@ -6,21 +6,20 @@ package anpan
  * Anpan (c) 2019 MikeModder/MikeModder007
  */
 
-import (
-	"github.com/bwmarrin/discordgo"
-)
+import "github.com/bwmarrin/discordgo"
 
 // CommandHandler contains all the data needed for the handler to function.
 type CommandHandler struct {
-	Prefixes         []string
-	Owners           []string
-	StatusHandler    StatusHandler
 	Commands         map[string]*Command
-	IgnoreBots       bool
 	CheckPermissions bool
 	Debug            bool
-	PrerunFunc       func(*discordgo.Session, *discordgo.MessageCreate, string, []string)
-	//UseDefaultHelp   bool
+	ErrorFunction    func(Context, *Command, error)
+	IgnoreBots       bool
+	Owners           []string
+	Prefixes         []string
+	StatusHandler    StatusHandler
+	SuccessFunction  func(Context, *Command)
+	//UseDefaultHelp bool
 }
 
 // StatusHandler contains status entries and the change interval.
@@ -31,13 +30,24 @@ type StatusHandler struct {
 
 // Command is the command object.
 type Command struct {
-	Name        string
 	Description string
-	OwnerOnly   bool
 	Hidden      bool
 	Permissions int
-	Run         func(context Context, args []string)
+	OwnerOnly   bool
+	Name        string
+	Run         func(context Context, args []string) error
+	Type        CommandType
 }
+
+// CommandType defines where commands can be used.
+type CommandType int
+
+// Command types; Either DM-Only, Guild-Only or both.
+const (
+	CommandTypePrivate = iota
+	CommandTypeGuild
+	CommandTypeEverywhere
+)
 
 // Context holds the data required for command execution.
 type Context struct {

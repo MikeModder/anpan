@@ -38,18 +38,28 @@ func (c *CommandHandler) GetPrefixes() []string {
 	return c.Prefixes
 }
 
-// SetPrerunFunc sets the function to run before the command handler's OnMessage.
-func (c *CommandHandler) SetPrerunFunc(prf func(*discordgo.Session, *discordgo.MessageCreate, string, []string)) {
-	c.PrerunFunc = prf
+// ClearErrorFunction removes the current ErrorFunction.
+func (c *CommandHandler) ClearErrorFunction() {
+	c.ErrorFunction = nil
 }
 
-// ClearPrerunFunc removes the prerun function.
-func (c *CommandHandler) ClearPrerunFunc() {
-	c.PrerunFunc = nil
+// SetErrorFunction defines the function to run on an error.
+func (c *CommandHandler) SetErrorFunction(f func(Context, *Command, error)) {
+	c.ErrorFunction = f
+}
+
+// ClearSuccessFunction removes the current ErrorFunction.
+func (c *CommandHandler) ClearSuccessFunction() {
+	c.SuccessFunction = nil
+}
+
+// SetSuccessFunction defines the function to run when a command completed execution.
+func (c *CommandHandler) SetSuccessFunction(f func(Context, *Command)) {
+	c.SuccessFunction = f
 }
 
 // AddCommand adds a command to the Commands map.
-func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run func(Context, []string)) {
+func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run func(Context, []string) error) {
 	c.Commands[name] = &Command{
 		Name:        name,
 		Description: desc,
@@ -108,29 +118,43 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	c.debugLog(content)
 
 	// Check for one of the prefixes. If the content doesn't start with one of the prefixes, return.
-	var prefix string
-	var has bool // false by default
+	var (
+		prefix    string
+		hasprefix bool // false by default
+	)
+
 	for i := 0; i < len(c.Prefixes); i++ {
 		prefix = c.Prefixes[i]
 		if strings.HasPrefix(content, prefix) {
-			has = true
+			hasprefix = true
 			break
 		}
 	}
 
-	// Check is has is true. If it's not that means we didn't find a prefix and should return
-	if !has {
+	// Check is hasprefix is true. If it's not that means we didn't find a prefix and should return.
+	if !hasprefix {
 		return
 	}
 
-	// Since we just checked for a prefix, now we need to trim off the prefix
+	// Since we just checked for a prefix, now we need to trim off the prefix.
 	cmd := strings.Split(strings.TrimPrefix(content, prefix), " ")
 	c.debugLog(cmd[0])
 
 	// Check and see if we have a command by that name.
 	if command, exist := c.Commands[cmd[0]]; exist {
-		// We do, so check permissions.
-		if !checkPermissions(s, m.GuildID, m.Author.ID, command.Permissions) {
+		// We do, so check if this channel is Private Messages; they don't support permissions.
+		channel, err := s.Channel(m.ChannelID)
+		if err != nil {
+			c.debugLog("Couldn't retrieve Channel, continuing...")
+		}
+
+		var dm bool // again, false by default.
+		if channel.Type == discordgo.ChannelTypeDM {
+			dm = true
+		}
+
+		// If it isn't Private Messages, go ahead and check the permissions.
+		if command.Type != CommandTypePrivate && !dm && !checkPermissions(s, m.GuildID, m.Author.ID, command.Permissions) {
 			embed := &discordgo.MessageEmbed{
 				Title:       "Insufficient Permissions!",
 				Description: "You don't have the correct permissions to run this command!",
@@ -140,20 +164,52 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			if !command.Hidden {
 				s.ChannelMessageSendEmbed(m.ChannelID, embed)
 			}
-			c.debugLog("Insufficient permissions for User")
+
+			c.debugLog("Insufficient permissions for User.")
 			return
 		}
 
-		if !checkPermissions(s, m.GuildID, s.State.User.ID, command.Permissions) {
+		// Same here, just for the bot itself.
+		if command.Type != CommandTypePrivate && !dm && !checkPermissions(s, m.GuildID, s.State.User.ID, command.Permissions) {
 			embed := &discordgo.MessageEmbed{
 				Title:       "Insufficient Permissions!",
 				Description: "Uh oh, I don't have the right permissions to execute that command for you! Make sure I have the right permissions (ex. Kick Members) then try running the command again!",
 				Color:       0xff0000,
 			}
+
 			if !command.Hidden {
 				s.ChannelMessageSendEmbed(m.ChannelID, embed)
 			}
-			c.debugLog("Insufficient permissions for Bot")
+
+			c.debugLog("Insufficient permissions for Bot.")
+			return
+		}
+
+		if channel.Type == discordgo.ChannelTypeDM && command.Type == CommandTypeGuild {
+			embed := &discordgo.MessageEmbed{
+				Title:       "Invalid Channel!",
+				Description: "You cannot run this command on a guild!",
+				Color:       0xff0000,
+			}
+
+			if !command.Hidden {
+				s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			}
+
+			c.debugLog("Tried to run DM-only command on a guild.")
+			return
+		} else if channel.Type == discordgo.ChannelTypeGuildText && command.Type == CommandTypePrivate {
+			embed := &discordgo.MessageEmbed{
+				Title:       "Invalid Channel!",
+				Description: "You cannot run this command inside Private Messages!",
+				Color:       0xff0000,
+			}
+
+			if !command.Hidden {
+				s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			}
+
+			c.debugLog("Tried to run Guild-Only command inside DM.")
 			return
 		}
 
@@ -170,21 +226,12 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			if !command.Hidden {
 				s.ChannelMessageSendEmbed(m.ChannelID, embed)
 			}
+
 			c.debugLog("Owner only command.")
 			return
 		}
 
 		c.debugLog(fmt.Sprintf("Executing %s.", command.Name))
-
-		c.debugLog("Firing PrerunFunc")
-		if c.PrerunFunc != nil {
-			c.PrerunFunc(s, m, command.Name, cmd[1:])
-		}
-
-		channel, err := s.Channel(m.ChannelID)
-		if err != nil {
-			c.debugLog("Couldn't retrieve Channel, continuing...")
-		}
 
 		guild, err := s.Guild(m.GuildID)
 		if err != nil {
@@ -205,16 +252,22 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			Member:  member,
 		}
 
-		command.Run(context, cmd[1:])
-		c.debugLog(fmt.Sprintf("Execution of %s done.", command.Name))
+		err = command.Run(context, cmd[1:])
+		if err != nil {
+			c.ErrorFunction(context, command, err)
+		} else if c.SuccessFunction != nil {
+			c.SuccessFunction(context, command)
+		} else {
+			c.debugLog(fmt.Sprintf("Execution of %s done.", command.Name))
+		}
 	} else {
 		// We don't :(
-		c.debugLog("Unknown command / not even one.")
+		c.debugLog("Unknown command / not even one. (Maybe command hasn't been registered?)")
 		return
 	}
 }
 
-func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
+func (c *CommandHandler) defaultHelpCmd(context Context, args []string) (err error) {
 	if len(args) >= 1 {
 		if commannd, has := c.Commands[args[0]]; has {
 			// Check if the command is hidden.
@@ -238,7 +291,7 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 				},
 			}
 
-			context.ReplyEmbed(embed)
+			_, err = context.ReplyEmbed(embed)
 			return
 		}
 
@@ -248,13 +301,16 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 			Color:       0xff0000,
 		}
 
-		context.ReplyEmbed(embed)
+		_, err = context.ReplyEmbed(embed)
 		return
 
 	}
 
-	count := len(c.Commands)
-	var list string
+	var (
+		count  = len(c.Commands)
+		footer strings.Builder
+		list   string
+	)
 
 	for name := range c.Commands {
 		cmd := c.Commands[name]
@@ -262,10 +318,6 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 			list += fmt.Sprintf("**%s** - `%s`\n", cmd.Name, cmd.Description)
 		}
 	}
-
-	var footer strings.Builder
-
-	//"The bot's prefixes are %s | There are %d commands." fmt.Sprintf(footer, c.Prefixes, count)
 
 	// Grammar is always fun.
 	if count == 1 {
@@ -300,5 +352,6 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) {
 		},
 	}
 
-	context.ReplyEmbed(embed)
+	_, err = context.ReplyEmbed(embed)
+	return
 }
