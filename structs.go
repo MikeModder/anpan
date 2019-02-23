@@ -6,9 +6,7 @@ package anpan
  * Anpan (c) 2019 MikeModder/MikeModder007
  */
 
-import (
-	"github.com/bwmarrin/discordgo"
-)
+import "github.com/bwmarrin/discordgo"
 
 // CommandHandler contains all the data needed for the handler to function.
 type CommandHandler struct {

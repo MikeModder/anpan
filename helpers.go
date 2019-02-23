@@ -6,9 +6,7 @@ package anpan
  * Anpan (c) 2019 MikeModder/MikeModder007
  */
 
-import (
-	"github.com/bwmarrin/discordgo"
-)
+import "github.com/bwmarrin/discordgo"
 
 func checkPermissions(s *discordgo.Session, guildid, memberid string, required int) bool {
 	// No permissions, don't even bother checking this.

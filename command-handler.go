@@ -280,17 +280,37 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) error {
 				return nil
 			}
 
+			// basic channel check
+			if context.Channel.Type == discordgo.ChannelTypeDM && commannd.Type == CommandTypeGuild {
+				return nil
+			} else if context.Channel.Type == discordgo.ChannelTypeGuildText && commannd.Type == CommandTypePrivate {
+				return nil
+			}
+
 			// Proper English is always fun.
-			var owneronlystring string
+			var (
+				owneronlystring string
+				typestring      string
+			)
+
 			if commannd.OwnerOnly {
 				owneronlystring = "Yes"
 			} else {
 				owneronlystring = "No"
 			}
 
+			if commannd.Type == CommandTypePrivate {
+				typestring = "Private"
+			} else if commannd.Type == CommandTypeGuild {
+				typestring = "Guild-only"
+			} else {
+				typestring = "No restrictions"
+			}
+
 			embed := &discordgo.MessageEmbed{
-				Title:       "Help!",
-				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: **%s**", commannd.Name, commannd.Description, owneronlystring),
+				Title: "Help!",
+				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: **%s**\nType: **%s**", commannd.Name, commannd.Description,
+					owneronlystring, typestring),
 				Footer: &discordgo.MessageEmbedFooter{
 					Text: fmt.Sprintf("The bot's prefixes are %s.", c.Prefixes),
 				},
@@ -316,7 +336,7 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) error {
 
 	for name := range c.Commands {
 		cmd := c.Commands[name]
-		if !cmd.Hidden {
+		if !cmd.Hidden && typeCheck(context.Channel.Type, cmd.Type) {
 			list += fmt.Sprintf("**%s** - `%s`\n", cmd.Name, cmd.Description)
 		}
 	}
@@ -360,4 +380,16 @@ func (c *CommandHandler) defaultHelpCmd(context Context, args []string) error {
 
 	context.ReplyEmbed(embed)
 	return nil
+}
+
+func typeCheck(chn discordgo.ChannelType, cmd CommandType) bool {
+	if cmd == CommandTypeEverywhere {
+		return true
+	} else if chn == discordgo.ChannelTypeDM && cmd == CommandTypePrivate {
+		return true
+	} else if chn == discordgo.ChannelTypeGuildText && cmd == CommandTypeGuild {
+		return true
+	} else {
+		return false
+	}
 }
