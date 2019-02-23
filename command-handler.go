@@ -59,13 +59,14 @@ func (c *CommandHandler) ClearOnErrorFunc() {
 }
 
 // AddCommand adds a command to the Commands map.
-func (c *CommandHandler) AddCommand(name, desc string, owneronly bool, hidden bool, perms int, run CommandRunFunc) {
+func (c *CommandHandler) AddCommand(name, desc string, owneronly, hidden bool, perms int, cmdtype CommandType, run CommandRunFunc) {
 	c.Commands[name] = &Command{
 		Name:        name,
 		Description: desc,
 		OwnerOnly:   owneronly,
 		Hidden:      hidden,
 		Permissions: perms,
+		Type:        cmdtype,
 		Run:         run,
 	}
 }
@@ -103,7 +104,7 @@ func (c *CommandHandler) debugLog(out string) {
 // AddDefaultHelpCommand adds the default (library provided) help command to the list of commands.
 // TODO: users have to manually call this to add the help command, maybe find a way to add it automatially if no help command is detected?
 func (c *CommandHandler) AddDefaultHelpCommand() {
-	c.AddCommand("help", "Get some help about using the bot.", false, false, 0, c.defaultHelpCmd)
+	c.AddCommand("help", "Get some help about using the bot.", false, false, 0, CommandTypeEverywhere, c.defaultHelpCmd)
 }
 
 // OnMessage - You don't need to call this! Pass this to AddHandler().
@@ -140,7 +141,19 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	// Check and see if we have a command by that name.
 	if command, exist := c.Commands[cmd[0]]; exist {
 		// We do, so check permissions.
-		if !checkPermissions(s, m.GuildID, m.Author.ID, command.Permissions) {
+		// We do, so check if this channel is Private Messages; they don't support permissions.
+		channel, err := s.Channel(m.ChannelID)
+		if err != nil {
+			c.debugLog("Couldn't retrieve Channel, continuing...")
+		}
+
+		var dm bool // again, false by default.
+		if channel.Type == discordgo.ChannelTypeDM {
+			dm = true
+		}
+
+		// If it isn't Private Messages, go ahead and check the permissions.
+		if command.Type != CommandTypePrivate && !dm && !checkPermissions(s, m.GuildID, m.Author.ID, command.Permissions) {
 			embed := &discordgo.MessageEmbed{
 				Title:       "Insufficient Permissions!",
 				Description: "You don't have the correct permissions to run this command!",
@@ -150,20 +163,52 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			if !command.Hidden {
 				s.ChannelMessageSendEmbed(m.ChannelID, embed)
 			}
-			c.debugLog("Insufficient permissions for User")
+
+			c.debugLog("Insufficient permissions for User.")
 			return
 		}
 
-		if !checkPermissions(s, m.GuildID, s.State.User.ID, command.Permissions) {
+		// Same here, just for the bot itself.
+		if command.Type != CommandTypePrivate && !dm && !checkPermissions(s, m.GuildID, s.State.User.ID, command.Permissions) {
 			embed := &discordgo.MessageEmbed{
 				Title:       "Insufficient Permissions!",
 				Description: "Uh oh, I don't have the right permissions to execute that command for you! Make sure I have the right permissions (ex. Kick Members) then try running the command again!",
 				Color:       0xff0000,
 			}
+
 			if !command.Hidden {
 				s.ChannelMessageSendEmbed(m.ChannelID, embed)
 			}
-			c.debugLog("Insufficient permissions for Bot")
+
+			c.debugLog("Insufficient permissions for Bot.")
+			return
+		}
+
+		if channel.Type == discordgo.ChannelTypeDM && command.Type == CommandTypeGuild {
+			embed := &discordgo.MessageEmbed{
+				Title:       "Invalid Channel!",
+				Description: "You cannot run this command on a guild!",
+				Color:       0xff0000,
+			}
+
+			if !command.Hidden {
+				s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			}
+
+			c.debugLog("Tried to run DM-only command on a guild.")
+			return
+		} else if channel.Type == discordgo.ChannelTypeGuildText && command.Type == CommandTypePrivate {
+			embed := &discordgo.MessageEmbed{
+				Title:       "Invalid Channel!",
+				Description: "You cannot run this command inside Private Messages!",
+				Color:       0xff0000,
+			}
+
+			if !command.Hidden {
+				s.ChannelMessageSendEmbed(m.ChannelID, embed)
+			}
+
+			c.debugLog("Tried to run Guild-Only command inside DM.")
 			return
 		}
 
@@ -193,11 +238,6 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			if c.PrerunFunc(s, m, command.Name, cmd[1:]) {
 				return
 			}
-		}
-
-		channel, err := s.Channel(m.ChannelID)
-		if err != nil {
-			c.debugLog("Couldn't retrieve Channel, continuing...")
 		}
 
 		guild, err := s.Guild(m.GuildID)

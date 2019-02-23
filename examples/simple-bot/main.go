@@ -42,7 +42,7 @@ func main() {
 	// hidden - hide command from non-owners - bool
 	// perms - permissisions required - int
 	// run - function to run - func(anpan.Context, []string) / CommandRunFunc
-	handler.AddCommand("ping", "Check the bot's ping", false, false, 0, pingCommand)
+	handler.AddCommand("ping", "Check the bot's ping", false, false, 0, anpan.CommandTypeEverywhere, pingCommand)
 
 	// Tell the dicordgo client to use handler's OnMessage function
 	client.AddHandler(handler.OnMessage)

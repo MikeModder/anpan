@@ -37,6 +37,7 @@ type Command struct {
 	OwnerOnly   bool
 	Hidden      bool
 	Permissions int
+	Type        CommandType
 	Run         CommandRunFunc
 }
 
@@ -60,3 +61,13 @@ type OnErrorFunc func(Context, string, error)
 
 // CommandRunFunc is a command's run function
 type CommandRunFunc func(Context, []string) error
+
+// CommandType defines where commands can be used.
+type CommandType int
+
+// Command types; Either DM-Only, Guild-Only or both.
+const (
+	CommandTypePrivate CommandType = iota
+	CommandTypeGuild
+	CommandTypeEverywhere
+)
