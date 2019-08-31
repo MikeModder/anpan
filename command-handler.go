@@ -59,7 +59,7 @@ func (c *CommandHandler) ClearOnErrorFunc() {
 }
 
 // AddCommand adds a command to the Commands map.
-func (c *CommandHandler) AddCommand(name, desc string, owneronly, hidden bool, perms int, cmdtype CommandType, run CommandRunFunc) {
+func (c *CommandHandler) AddCommand(name, desc string, owneronly, hidden bool, perms Permission, cmdtype CommandType, run CommandRunFunc) {
 	c.Commands[name] = &Command{
 		Name:        name,
 		Description: desc,

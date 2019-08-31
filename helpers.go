@@ -8,7 +8,7 @@ package anpan
 
 import "github.com/bwmarrin/discordgo"
 
-func checkPermissions(s *discordgo.Session, guildid, memberid string, required int) bool {
+func checkPermissions(s *discordgo.Session, guildid, memberid string, required Permission) bool {
 	// No permissions, don't even bother checking this.
 	if required == 0 {
 		return true
@@ -31,7 +31,7 @@ func checkPermissions(s *discordgo.Session, guildid, memberid string, required i
 		}
 
 		// If Permissions AND required isn't 0, return true.
-		if role.Permissions&required != 0 {
+		if role.Permissions&int(required) != 0 {
 			return true
 		}
 	}

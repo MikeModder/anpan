@@ -34,7 +34,7 @@ type Command struct {
 	Description string
 	OwnerOnly   bool
 	Hidden      bool
-	Permissions int
+	Permissions Permission
 	Type        CommandType
 	Run         CommandRunFunc
 }
@@ -48,24 +48,3 @@ type Context struct {
 	Guild   *discordgo.Guild
 	Member  *discordgo.Member
 }
-
-/* These are types, not structs, but this is the best place to put them */
-
-// PrerunFunc is the type for the function that can be run before command execution.
-type PrerunFunc func(*discordgo.Session, *discordgo.MessageCreate, string, []string) bool
-
-// OnErrorFunc is the type for the function that can be run.
-type OnErrorFunc func(Context, string, error)
-
-// CommandRunFunc is a command's run function
-type CommandRunFunc func(Context, []string) error
-
-// CommandType defines where commands can be used.
-type CommandType int
-
-// Command types; Either DM-Only, Guild-Only or both.
-const (
-	CommandTypePrivate CommandType = iota
-	CommandTypeGuild
-	CommandTypeEverywhere
-)
