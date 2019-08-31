@@ -40,7 +40,7 @@ func main() {
 	// desc - command description - string
 	// owneronly - only allow owners to run - bool
 	// hidden - hide command from non-owners - bool
-	// perms - permissisions required - int
+	// perms - permissisions required - anpan.Permission (int)
 	// type - command type, sets where the command is available
 	// run - function to run - func(anpan.Context, []string) / CommandRunFunc
 	handler.AddCommand("ping", "Check the bot's ping", false, false, 0, anpan.CommandTypeEverywhere, pingCommand)
