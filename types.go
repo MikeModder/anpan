@@ -15,7 +15,7 @@ type CommandRunFunc func(Context, []string) error
 type DebugFunc func(string)
 
 // HelpRunFunc is used for definitions of a help command.
-type HelpRunFunc func(context Context, args []string, commands []*Command, prefixes []string) error
+type HelpRunFunc func(Context, []string, []*Command, []string) error
 
 // PrerunFunc is the type for the function that can be run before command execution.
 // If all goes well, return true. otherwise, false.
