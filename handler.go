@@ -264,16 +264,38 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		member *discordgo.Member
 	)
 
-	guild, err = s.Guild(m.GuildID)
-	if err != nil {
+	if guild, err = s.Guild(m.GuildID); err != nil {
 		c.debugLog(fmt.Sprintf("Couldn't retrieve Guild (%s), continuing...", err.Error()))
-	} else {
-		member, err = s.State.Member(m.GuildID, m.Author.ID)
-		if err == nil {
-			// Permission check
-		} else {
-			c.debugLog(fmt.Sprintf("Couldn't retrieve Member (%s), continuing...", err.Error()))
+	}
+
+	if member, err = s.State.Member(m.GuildID, m.Author.ID); err != nil {
+		c.debugLog(fmt.Sprintf("Couldn't retrieve Member (%s), continuing...", err.Error()))
+	}
+
+	if c.CheckPermissions && guild != nil && member != nil && command.Permissions != 0 {
+		has = false
+
+		for _, roleID := range member.Roles {
+			if has {
+				break
+			}
+
+			role, err := s.State.Role(guild.ID, roleID)
+			if err != nil {
+				c.debugLog("Fetching role \"" + roleID + "\" failed: \"" + err.Error() + "\"")
+				continue
+			}
+
+			if role.Permissions&discordgo.PermissionAdministrator != 0 || role.Permissions&command.Permissions != 0 {
+				has = true
+			}
 		}
+	} else {
+		has = true
+	}
+
+	if !has {
+		return
 	}
 
 	context := Context{
@@ -285,9 +307,8 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		Member:  member,
 	}
 
-	err = command.Run(context, cmd[1:])
-	if err != nil && c.OnErrorFunc != nil {
-		// Run the user's OnErrorFunc
+	if err = command.Run(context, cmd[1:]); err != nil && c.OnErrorFunc != nil {
+		// Run the user's OnErrorFunc if an error occurs.
 		c.OnErrorFunc(context, cmd[0], err)
 	}
 }
