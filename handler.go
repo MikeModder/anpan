@@ -72,6 +72,21 @@ func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneron
 	}
 }
 
+// SetHelpCommand sets the help command.
+func (c *CommandHandler) SetHelpCommand(name string, aliases []string, perms int, help HelpRunFunc) {
+	c.HelpCommand = &HelpCommand{
+		Aliases:     aliases,
+		Name:        name,
+		Permissions: perms,
+		Run:         help,
+	}
+}
+
+// ClearHelpCommand clears the current help command.
+func (c *CommandHandler) ClearHelpCommand() {
+	c.HelpCommand = nil
+}
+
 // RemoveCommand removes a command from the Commands map.
 // Note that this only searches for the name, aliases don'tt count.
 func (c *CommandHandler) RemoveCommand(name string) {
@@ -104,39 +119,6 @@ func (c *CommandHandler) errorFunc(context Context, name string, err error) {
 	if c.OnErrorFunc != nil {
 		c.OnErrorFunc(context, name, err)
 	}
-}
-
-func checkPermissions(s *discordgo.Session, guildID, memberID string, required int) (bool, error) {
-	// No permissions, don't even bother checking this.
-	if required == 0 {
-		return true, nil
-	}
-
-	member, err := s.State.Member(guildID, memberID)
-	if err != nil {
-		return false, fmt.Errorf("Fetching member failed: %s", err.Error())
-	}
-
-	for _, roleID := range member.Roles {
-		role, err := s.State.Role(guildID, roleID)
-		if err != nil {
-			return false, fmt.Errorf("Fetching roles failed: %s", err.Error())
-		}
-
-		// If they have admin, return true.
-		if role.Permissions&discordgo.PermissionAdministrator != 0 {
-			return true, nil
-		}
-
-		// If Permissions AND required isn't 0, return true.
-		if role.Permissions&int(required) != 0 {
-			return true, nil
-		}
-	}
-
-	// We didn't catch anything in the above loop,
-	// so we simply return false.
-	return false, nil
 }
 
 // OnMessage - You don't need to call this! Pass this to AddHandler().
@@ -240,47 +222,6 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		return
 	}
 
-	// Now - time to find out what kind of channel this is and to apply proper measures regarding permissions.
-	if channel.Type != discordgo.ChannelTypeDM {
-
-		has, err = checkPermissions(s, m.GuildID, m.Author.ID, command.Permissions)
-		if err != nil {
-			c.debugLog("Failed to get permissions for the user.")
-			c.errorFunc(Context{
-				Channel: channel,
-				Message: m.Message,
-				User:    m.Author,
-			}, cmd[0], fmt.Errorf(ErrUserInsufficientPermissions))
-
-			return
-		}
-
-		if command.Type != CommandTypePrivate && !has {
-			c.errorFunc(Context{}, command.Name, fmt.Errorf(ErrUserInsufficientPermissions))
-			c.debugLog("Insufficient permissions for User.")
-			return
-		}
-
-		// Same here, just for the bot itself.
-		has, err = checkPermissions(s, m.GuildID, s.State.User.ID, command.Permissions)
-		if err != nil {
-			c.debugLog("Failed to get permissions for the bot.")
-			c.errorFunc(Context{
-				Channel: channel,
-				Message: m.Message,
-				User:    m.Author,
-			}, cmd[0], fmt.Errorf(ErrSelfInsufficientPermissions))
-
-			return
-		}
-
-		if command.Type != CommandTypePrivate && !has {
-			c.errorFunc(Context{}, command.Name, fmt.Errorf(ErrSelfInsufficientPermissions))
-			c.debugLog("Insufficient permissions for Bot.")
-			return
-		}
-	}
-
 	if channel.Type == discordgo.ChannelTypeDM && command.Type == CommandTypeGuild {
 		c.errorFunc(Context{
 			Channel: channel,
@@ -290,7 +231,11 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		c.debugLog("Tried to run DM-only command on a guild.")
 		return
 	} else if channel.Type == discordgo.ChannelTypeGuildText && command.Type == CommandTypePrivate {
-		c.errorFunc(Context{}, command.Name, fmt.Errorf(ErrGuildOnly))
+		c.errorFunc(Context{
+			Channel: channel,
+			Message: m.Message,
+			User:    m.Author,
+		}, command.Name, fmt.Errorf(ErrGuildOnly))
 		c.debugLog("Tried to run Guild-Only command inside DM.")
 		return
 	}
@@ -314,14 +259,21 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		}
 	}
 
-	guild, err := s.Guild(m.GuildID)
+	var (
+		guild  *discordgo.Guild
+		member *discordgo.Member
+	)
+
+	guild, err = s.Guild(m.GuildID)
 	if err != nil {
 		c.debugLog(fmt.Sprintf("Couldn't retrieve Guild (%s), continuing...", err.Error()))
-	}
-
-	member, err := s.State.Member(m.GuildID, m.Author.ID)
-	if err != nil {
-		c.debugLog(fmt.Sprintf("Couldn't retrieve Member (%s), continuing...", err.Error()))
+	} else {
+		member, err = s.State.Member(m.GuildID, m.Author.ID)
+		if err == nil {
+			// Permission check
+		} else {
+			c.debugLog(fmt.Sprintf("Couldn't retrieve Member (%s), continuing...", err.Error()))
+		}
 	}
 
 	context := Context{
