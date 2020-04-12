@@ -64,8 +64,9 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 
 			prefixesBuilder := strings.Builder{}
 			if len(prefixes) == 1 {
-				prefixesBuilder.WriteString(fmt.Sprintf("The bot's prefix is %s.", prefixes[0]))
+				prefixesBuilder.WriteString(fmt.Sprintf("The bot's prefix is %s", prefixes[0]))
 			} else {
+				prefixesBuilder.WriteString("The bot's prefixes are ")
 				for i, prefix := range prefixes {
 					if i+1 == len(prefixes) {
 						prefixesBuilder.WriteString(fmt.Sprintf("and %s", prefix))
@@ -80,7 +81,7 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: **%s**\nType: **%s**", commannd.Name, commannd.Description,
 					owneronlystring, typestring),
 				Footer: &discordgo.MessageEmbedFooter{
-					Text: fmt.Sprintf("The bot's prefixes are %s.", prefixesBuilder.String()),
+					Text: fmt.Sprintf(" %s.", prefixesBuilder.String()),
 				},
 			})
 
@@ -93,8 +94,8 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 			Color:       0xff0000,
 		}
 
-		context.ReplyEmbed(embed)
-		return nil
+		_, err := context.ReplyEmbed(embed)
+		return err
 	}
 
 	count := len(commands)

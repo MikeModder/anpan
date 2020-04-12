@@ -22,10 +22,10 @@ func main() {
 
 	// Create a new handler and add a command.
 	handler := anpan.New([]string{"e!"}, []string{"your id", "another one"}, true, true)
-	handler.AddCommand("ping", []string{"pong"}, "Check the bot's ping.", false, false, discordgo.PermissionSendMessages, anpan.CommandTypeEverywhere, pingCommand)
-	handler.SetHelpCommand("help", []string{}, helpCommand)
+	handler.AddCommand("ping", "Check the bot's ping.", []string{"pong"}, false, false, discordgo.PermissionSendMessages, anpan.CommandTypeEverywhere, pingCommand)
+	handler.SetHelpCommand("help", []string{}, discordgo.PermissionSendMessages, helpCommand)
 
-	handler.SetErrorFunc(func(context anpan.Context, name string, err error) {
+	handler.SetOnErrorFunc(func(context anpan.Context, name string, err error) {
 		fmt.Printf("An error occurred for command \"%s\": \"%s\".\n", name, err.Error())
 	})
 

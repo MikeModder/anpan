@@ -60,7 +60,7 @@ func (c *CommandHandler) ClearOnErrorFunc() {
 
 // AddCommand adds a command to the Commands map.
 func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneronly, hidden bool, perms int, cmdtype CommandType, run CommandRunFunc) {
-	c.Commands[len(c.Commands)+1] = &Command{
+	c.Commands = append(c.Commands, &Command{
 		Aliases:     aliases,
 		Description: desc,
 		Hidden:      hidden,
@@ -69,7 +69,7 @@ func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneron
 		Permissions: perms,
 		Run:         run,
 		Type:        cmdtype,
-	}
+	})
 }
 
 // SetHelpCommand sets the help command.
@@ -157,6 +157,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if err != nil {
 		c.debugLog("Failed to get the channel.")
 		c.errorFunc(Context{
+			Session: s,
 			Message: m.Message,
 			User:    m.Author,
 		}, cmd[0], fmt.Errorf(ErrDataUnavailable))
@@ -166,6 +167,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if m.Author.Bot && c.IgnoreBots {
 		c.debugLog("Author is bot and IgnoreBots is true.")
 		c.errorFunc(Context{
+			Session: s,
 			Channel: channel,
 			Message: m.Message,
 			User:    m.Author,
@@ -178,6 +180,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		for _, v := range c.HelpCommand.Aliases {
 			if cmd[0] == v {
 				c.HelpCommand.Run(Context{
+					Session: s,
 					Channel: channel,
 					Message: m.Message,
 					User:    m.Author,
@@ -186,6 +189,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		}
 	} else {
 		c.HelpCommand.Run(Context{
+			Session: s,
 			Channel: channel,
 			Message: m.Message,
 			User:    m.Author,
@@ -214,6 +218,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if command == nil {
 		c.debugLog("Invalid command.")
 		c.errorFunc(Context{
+			Session: s,
 			Channel: channel,
 			Message: m.Message,
 			User:    m.Author,
@@ -224,6 +229,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 
 	if channel.Type == discordgo.ChannelTypeDM && command.Type == CommandTypeGuild {
 		c.errorFunc(Context{
+			Session: s,
 			Channel: channel,
 			Message: m.Message,
 			User:    m.Author,
@@ -232,6 +238,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		return
 	} else if channel.Type == discordgo.ChannelTypeGuildText && command.Type == CommandTypePrivate {
 		c.errorFunc(Context{
+			Session: s,
 			Channel: channel,
 			Message: m.Message,
 			User:    m.Author,
@@ -243,6 +250,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	// Check if it's an owner-only command, and if it is make sure the author is an owner.
 	if command.OwnerOnly && !c.IsOwner(m.Author.ID) {
 		c.errorFunc(Context{
+			Session: s,
 			Channel: channel,
 			Message: m.Message,
 			User:    m.Author,
