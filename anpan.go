@@ -1,7 +1,7 @@
 package anpan
 
 /* Package anpan:
- * Command handler for DiscordGo.
+ * Command handler for discordgo. (https://github.com/bwmarrin/discordgo)
  * Inspired by:
  *  - Clinet (https://github.com/JoshuaDoes/clinet)
  *  - Harmony (https://github.com/superwhiskers/harmony)
@@ -13,33 +13,15 @@ package anpan
  * 	- Owner only commands.
  *	- Hidden commands.
  *
- * Anpan (c) 2019 MikeModder/MikeModder007
+ * anpan (c) 2020 MikeModder/MikeModder007, Apfel
  */
 
-// NewCommandHandler creates a new command handler.
-func NewCommandHandler(prefixes []string, owners []string, ignoreBots, checkPerms bool) CommandHandler {
+// New creates a new command handler.
+func New(prefixes []string, owners []string, ignoreBots, checkPerms bool) CommandHandler {
 	return CommandHandler{
 		Prefixes:         prefixes,
 		Owners:           owners,
-		StatusHandler:    NewDefaultStatusHandler(),
-		Commands:         make(map[string]*Command),
 		IgnoreBots:       ignoreBots,
 		CheckPermissions: checkPerms,
 	}
-}
-
-// NewStatusHandler creates a new status handler.
-func NewStatusHandler(entries []string, interval string) StatusHandler {
-	return StatusHandler{
-		Entries:        entries,
-		SwitchInterval: interval,
-	}
-}
-
-// NewDefaultStatusHandler creates a new status handler with some "default" settings.
-func NewDefaultStatusHandler() StatusHandler {
-	return NewStatusHandler([]string{
-		"Powered by Golang!",
-		"Powered by anpan!",
-	}, "60s")
 }

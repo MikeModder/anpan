@@ -3,7 +3,7 @@ package anpan
 /* context.go:
  * Contains some utility functions for anpan.Context.
  *
- * Anpan (c) 2019 MikeModder/MikeModder007
+ * anpan (c) 2020 MikeModder/MikeModder007, Apfel
  */
 
 import (
@@ -15,6 +15,16 @@ import (
 // Reply directly replies with a message.
 func (c *Context) Reply(message string) (*discordgo.Message, error) {
 	return c.Session.ChannelMessageSend(c.Channel.ID, message)
+}
+
+// ReplyComplex combines Reply, ReplyEmbed and ReplyFile as a way to send a message with, for example, Text and an Embed together.
+func (c *Context) ReplyComplex(message string, tts bool, embed *discordgo.MessageEmbed, files []*discordgo.File) (*discordgo.Message, error) {
+	return c.Session.ChannelMessageSendComplex(c.Channel.ID, &discordgo.MessageSend{
+		Content: message,
+		Embed:   embed,
+		Tts:     tts,
+		Files:   files,
+	})
 }
 
 // ReplyEmbed directly replies with a embed, but not with a message.

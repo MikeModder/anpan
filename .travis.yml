@@ -1,11 +1,8 @@
+os: linux
+dist: bionic
+
 language: go
-go: 
- - stable
-install:
-- go get github.com/bwmarrin/discordgo
-jobs:
-  include:
-    - stage: build
-      script: go build
-stages:
-- build
+go: stable
+
+install: go get github.com/bwmarrin/discordgo
+script: go build
