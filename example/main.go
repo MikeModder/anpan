@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// Create a new handler and add a command.
-	handler := anpan.NewCommandHandler([]string{"e!"}, []string{"your id", "another one"}, true, true)
+	handler := anpan.New([]string{"e!"}, []string{"your id", "another one"}, true, true)
 	handler.AddCommand("ping", []string{"pong"}, "Check the bot's ping.", false, false, discordgo.PermissionSendMessages, anpan.CommandTypeEverywhere, pingCommand)
 	handler.SetHelpCommand("help", []string{}, helpCommand)
 
@@ -58,6 +58,6 @@ func pingCommand(ctx anpan.Context, args []string) error {
 		return err
 	}
 
-	_, err := ctx.Session.ChannelMessageEdit(ctx.Message.ChannelID, msg.ID, fmt.Sprintf("Pong! Ping took *%s*!", time.Now().Sub(sent).String()))
+	_, err = ctx.Session.ChannelMessageEdit(ctx.Message.ChannelID, msg.ID, fmt.Sprintf("Pong! Ping took *%s*!", time.Now().Sub(sent).String()))
 	return err
 }

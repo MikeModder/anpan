@@ -1,4 +1,4 @@
-package anpan
+package main
 
 import (
 	"fmt"
@@ -8,20 +8,20 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func helpCommand(context Context, args []string, commands []*anpan.Command, prefixes []string) error {
-	typeCheck := func(chn discordgo.ChannelType, cmd CommandType) bool {
+func helpCommand(context anpan.Context, args []string, commands []*anpan.Command, prefixes []string) error {
+	typeCheck := func(chn discordgo.ChannelType, cmd anpan.CommandType) bool {
 		switch cmd {
-		case CommandTypeEverywhere:
+		case anpan.CommandTypeEverywhere:
 			return true
 
-		case CommandTypePrivate:
+		case anpan.CommandTypePrivate:
 			if chn == discordgo.ChannelTypeDM {
 				return true
 			}
 
 			break
 
-		case CommandTypeGuild:
+		case anpan.CommandTypeGuild:
 			if chn == discordgo.ChannelTypeGuildText {
 				return true
 			}
@@ -33,13 +33,13 @@ func helpCommand(context Context, args []string, commands []*anpan.Command, pref
 	}
 
 	if len(args) >= 1 {
-		for _, v := range commands {
-			if args[0] != v.Name {
+		for _, commannd := range commands {
+			if args[0] != commannd.Name {
 				continue
 			}
 
 			// Basic checks.
-			if commannd.Hidden || (context.Channel.Type == discordgo.ChannelTypeDM && commannd.Type == CommandTypeGuild) || (context.Channel.Type == discordgo.ChannelTypeGuildText && commannd.Type == CommandTypePrivate) {
+			if commannd.Hidden || (context.Channel.Type == discordgo.ChannelTypeDM && commannd.Type == anpan.CommandTypeGuild) || (context.Channel.Type == discordgo.ChannelTypeGuildText && commannd.Type == anpan.CommandTypePrivate) {
 				return nil
 			}
 
@@ -54,12 +54,25 @@ func helpCommand(context Context, args []string, commands []*anpan.Command, pref
 			}
 
 			switch commannd.Type {
-			case CommandTypePrivate:
+			case anpan.CommandTypePrivate:
 				typestring = "Private"
 				break
-			case CommandTypeGuild:
+			case anpan.CommandTypeGuild:
 				typestring = "Guild-only"
 				break
+			}
+
+			prefixesBuilder := strings.Builder{}
+			if len(prefixes) == 1 {
+				prefixesBuilder.WriteString(fmt.Sprintf("The bot's prefix is %s.", prefixes[0]))
+			} else {
+				for i, prefix := range prefixes {
+					if i+1 == len(prefixes) {
+						prefixesBuilder.WriteString(fmt.Sprintf("and %s", prefix))
+					} else {
+						prefixesBuilder.WriteString(fmt.Sprintf("%s, ", prefix))
+					}
+				}
 			}
 
 			_, err := context.ReplyEmbed(&discordgo.MessageEmbed{
@@ -67,9 +80,10 @@ func helpCommand(context Context, args []string, commands []*anpan.Command, pref
 				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: **%s**\nType: **%s**", commannd.Name, commannd.Description,
 					owneronlystring, typestring),
 				Footer: &discordgo.MessageEmbedFooter{
-					Text: fmt.Sprintf("The bot's prefixes are %s.", handler.Prefixes),
+					Text: fmt.Sprintf("The bot's prefixes are %s.", prefixesBuilder.String()),
 				},
 			})
+
 			return err
 		}
 
@@ -83,7 +97,7 @@ func helpCommand(context Context, args []string, commands []*anpan.Command, pref
 		return nil
 	}
 
-	count := len(handler.Commands)
+	count := len(commands)
 	var list string
 
 	for _, cmd := range commands {
