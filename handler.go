@@ -44,7 +44,7 @@ func (c *CommandHandler) SetPrerunFunc(prf PrerunFunc) {
 }
 
 // GetPrerunFunc returns the current Prerun function.
-func (c *CommandHandler) GetPrerunFunc(prf PrerunFunc) PrerunFunc {
+func (c *CommandHandler) GetPrerunFunc() PrerunFunc {
 	return c.prerunFunc
 }
 
@@ -60,8 +60,28 @@ func (c *CommandHandler) SetOnErrorFunc(oef OnErrorFunc) {
 	c.onErrorFunc = oef
 }
 
+// GetOnErrorFunc returns the current OnError function.
+func (c *CommandHandler) GetOnErrorFunc() OnErrorFunc {
+	return c.onErrorFunc
+}
+
 // ClearOnErrorFunc clears the onerror function
 func (c *CommandHandler) ClearOnErrorFunc() {
+	c.onErrorFunc = nil
+}
+
+// SetDebugFunc sets the given debug function as the debugging function for the command handler.
+func (c *CommandHandler) SetDebugFunc(df DebugFunc) {
+	c.debugFunc = df
+}
+
+// GetDebugFunc returns the currently set debug function.
+func (c *CommandHandler) GetDebugFunc() DebugFunc {
+	return c.debugFunc
+}
+
+// ClearDebugFunc clears the Debug function
+func (c *CommandHandler) ClearDebugFunc() {
 	c.onErrorFunc = nil
 }
 
