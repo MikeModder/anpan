@@ -7,6 +7,7 @@ package anpan
  */
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -184,6 +185,48 @@ func (c *CommandHandler) errorFunc(context Context, name string, err error) {
 	}
 }
 
+func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int) error {
+	var permissions int
+
+	if member.User.ID == guild.OwnerID {
+		return nil
+	}
+
+	for _, roleID := range member.Roles {
+
+		role, err := session.State.Role(guild.ID, roleID)
+		if err != nil {
+			return err
+		}
+
+		if role.Permissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
+			return nil
+		}
+
+		permissions |= role.Permissions
+	}
+
+	for _, overwrite := range channel.PermissionOverwrites {
+		if overwrite.ID == member.User.ID {
+			permissions = permissions &^ overwrite.Deny
+			permissions |= overwrite.Allow
+		}
+
+		for _, roleID := range member.Roles {
+			if overwrite.ID == roleID {
+				permissions = permissions &^ overwrite.Deny
+				permissions |= overwrite.Allow
+			}
+		}
+	}
+
+	if permissions&necessaryPermissions == 0 {
+		return errors.New("insufficient perms")
+	}
+
+	return nil
+}
+
 // OnMessage - You don't need to call this! Pass this to AddHandler().
 func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
@@ -353,47 +396,20 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	}
 
 	var selfHas bool
+
 	if c.checkPermissions && guild != nil && member != nil && selfMember != nil && (command.SelfPermissions != 0 || command.UserPermissions != 0) {
 		has = false
 
-		if member.User.ID == guild.OwnerID {
+		if err := permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
+			c.debugLog(fmt.Sprintf("User permission check encountered an error: %s", err.Error()))
+		} else {
 			has = true
 		}
 
-		for _, roleID := range member.Roles {
-			if has {
-				break
-			}
-
-			role, err := s.State.Role(guild.ID, roleID)
-			if err != nil {
-				c.debugLog("Fetching role \"" + roleID + "\" failed: \"" + err.Error() + "\"")
-				continue
-			}
-
-			c.debugLog(fmt.Sprintf("User role \"%s\" has permissions \"%d\". Required permissions are: \"%d\".", role.ID, role.Permissions, command.UserPermissions))
-
-			if role.Permissions&discordgo.PermissionAdministrator != 0 || role.Permissions&command.UserPermissions != 0 {
-				has = true
-			}
-		}
-
-		for _, roleID := range selfMember.Roles {
-			if selfHas {
-				break
-			}
-
-			role, err := s.State.Role(guild.ID, roleID)
-			if err != nil {
-				c.debugLog("Fetching role \"" + roleID + "\" failed: \"" + err.Error() + "\"")
-				continue
-			}
-
-			c.debugLog(fmt.Sprintf("Our role \"%s\" has permissions \"%d\". Required permissions are: \"%d\".", role.ID, role.Permissions, command.SelfPermissions))
-
-			if role.Permissions&discordgo.PermissionAdministrator != 0 || role.Permissions&command.SelfPermissions != 0 {
-				selfHas = true
-			}
+		if err := permissionCheck(s, selfMember, guild, channel, command.UserPermissions); err != nil {
+			c.debugLog(fmt.Sprintf("Self permission check encountered an error: %s", err.Error()))
+		} else {
+			selfHas = true
 		}
 	} else {
 		has = true
