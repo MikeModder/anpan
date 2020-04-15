@@ -389,10 +389,10 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 				continue
 			}
 
-			c.debugLog(fmt.Sprintf("Our role \"%s\" has permissions \"%d\". Required permissions are: \"%d\".\nPermission comparision: \"%d\".", role.ID, role.Permissions, command.SelfPermissions, role.Permissions&command.SelfPermissions))
+			c.debugLog(fmt.Sprintf("Our role \"%s\" has permissions \"%d\". Required permissions are: \"%d\".", role.ID, role.Permissions, command.SelfPermissions))
 
 			if role.Permissions&discordgo.PermissionAdministrator != 0 || role.Permissions&command.SelfPermissions != 0 {
-				has = true
+				selfHas = true
 			}
 		}
 	} else {
