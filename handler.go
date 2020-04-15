@@ -347,6 +347,8 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 				continue
 			}
 
+			c.debugLog(fmt.Sprintf("User role \"%s\" has permissions \"%d\". Required permissions are: \"%d\".", role.ID, role.Permissions, command.UserPermissions))
+
 			if role.Permissions&discordgo.PermissionAdministrator != 0 || role.Permissions&command.UserPermissions != 0 {
 				has = true
 			}
@@ -362,6 +364,8 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 				c.debugLog("Fetching role \"" + roleID + "\" failed: \"" + err.Error() + "\"")
 				continue
 			}
+
+			c.debugLog(fmt.Sprintf("Our role \"%s\" has permissions \"%d\". Required permissions are: \"%d\".", role.ID, role.Permissions, command.SelfPermissions))
 
 			if role.Permissions&discordgo.PermissionAdministrator != 0 || role.Permissions&command.SelfPermissions != 0 {
 				has = true
