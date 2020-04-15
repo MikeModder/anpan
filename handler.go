@@ -82,7 +82,7 @@ func (c *CommandHandler) GetDebugFunc() DebugFunc {
 
 // ClearDebugFunc clears the Debug function
 func (c *CommandHandler) ClearDebugFunc() {
-	c.onErrorFunc = nil
+	c.debugFunc = nil
 }
 
 // AddCommand adds a command to the Commands map.
@@ -186,6 +186,10 @@ func (c *CommandHandler) errorFunc(context Context, name string, err error) {
 
 // OnMessage - You don't need to call this! Pass this to AddHandler().
 func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
 	// Parse all content.
 	content := m.Content
 	c.debugLog("Received: \"" + content + "\"")
@@ -385,7 +389,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 				continue
 			}
 
-			c.debugLog(fmt.Sprintf("Our role \"%s\" has permissions \"%d\". Required permissions are: \"%d\".", role.ID, role.Permissions, command.SelfPermissions))
+			c.debugLog(fmt.Sprintf("Our role \"%s\" has permissions \"%d\". Required permissions are: \"%d\".\nPermission comparision: \"%d\".", role.ID, role.Permissions, command.SelfPermissions, role.Permissions&command.SelfPermissions))
 
 			if role.Permissions&discordgo.PermissionAdministrator != 0 || role.Permissions&command.SelfPermissions != 0 {
 				has = true
