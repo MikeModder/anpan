@@ -332,6 +332,10 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if c.checkPermissions && guild != nil && member != nil && selfMember != nil && (command.SelfPermissions != 0 || command.UserPermissions != 0) {
 		has = false
 
+		if member.User.ID == guild.OwnerID {
+			has = true
+		}
+
 		for _, roleID := range member.Roles {
 			if has {
 				break
@@ -348,7 +352,7 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 			}
 		}
 
-		for _, roleID := range member.Roles {
+		for _, roleID := range selfMember.Roles {
 			if selfHas {
 				break
 			}
