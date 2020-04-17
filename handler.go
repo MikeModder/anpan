@@ -185,7 +185,7 @@ func (c *CommandHandler) errorFunc(context Context, name string, err error) {
 	}
 }
 
-func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int) error {
+func (c *CommandHandler) permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int) error {
 	var permissions int
 
 	if member.User.ID == guild.OwnerID {
@@ -205,19 +205,26 @@ func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild
 		permissions |= role.Permissions
 	}
 
+	c.debugFunc(fmt.Sprintf("Permissions before: %d", permissions))
 	for _, overwrite := range channel.PermissionOverwrites {
+		c.debugFunc(fmt.Sprintf("Overwrite %s (Type %s): %d - %d", overwrite.ID, overwrite.Type, overwrite.Allow, overwrite.Deny))
+
 		if overwrite.ID == member.User.ID {
+			c.debugFunc("This overwrite matches the user's ID.")
 			permissions = permissions &^ overwrite.Deny
 			permissions |= overwrite.Allow
 		}
 
 		for _, roleID := range member.Roles {
 			if overwrite.ID == roleID {
+				c.debugFunc("Overwrite appears to be a role and the user has that role.")
 				permissions = permissions &^ overwrite.Deny
 				permissions |= overwrite.Allow
 			}
 		}
 	}
+
+	c.debugFunc(fmt.Sprintf("Permissions after: %d", permissions))
 
 	if permissions&necessaryPermissions != necessaryPermissions {
 		return errors.New("insufficient perms")
@@ -399,13 +406,13 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if c.checkPermissions && guild != nil && member != nil && selfMember != nil && (command.SelfPermissions != 0 || command.UserPermissions != 0) {
 		has = false
 
-		if err := permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
+		if err := c.permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
 			c.debugLog(fmt.Sprintf("User permission check encountered an error: %s", err.Error()))
 		} else {
 			has = true
 		}
 
-		if err := permissionCheck(s, selfMember, guild, channel, command.UserPermissions); err != nil {
+		if err := c.permissionCheck(s, selfMember, guild, channel, command.UserPermissions); err != nil {
 			c.debugLog(fmt.Sprintf("Self permission check encountered an error: %s", err.Error()))
 		} else {
 			selfHas = true
