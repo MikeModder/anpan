@@ -36,43 +36,80 @@ type HelpCommand struct {
 }
 
 // CommandHandler contains all the data needed for the handler to function.
+// Anything inside here must be controlled with Get/Set/Remove function.
 type CommandHandler struct {
-	CheckPermissions bool
-	Commands         []*Command
-	DebugFunc        DebugFunc
-	HelpCommand      *HelpCommand
-	IgnoreBots       bool
-	OnErrorFunc      OnErrorFunc
-	Owners           []string
-	Prefixes         []string
-	PrerunFunc       PrerunFunc
+	checkPermissions bool
+	commands         []*Command
+	debugFunc        DebugFunc
+	helpCommand      *HelpCommand
+	ignoreBots       bool
+	onErrorFunc      OnErrorFunc
+	owners           []string
+	prefixes         []string
+	prerunFunc       PrerunFunc
 }
 
 // Command represents a command.
 type Command struct {
-	Aliases     []string
-	Hidden      bool
+	// Aliases contains all aliases for the command.
+	// In most cases, these'll be less favored than the name, or ignored.
+	Aliases []string
+
+	// Hidden defines a "hidden" command - it shouldn't be shown in a help message.
+	Hidden bool
+
+	// Description defines what the command does.
 	Description string
-	Name        string
-	OwnerOnly   bool
-	Permissions int
-	Run         CommandRunFunc
-	Type        CommandType
+
+	// Name defines the name of the command.
+	Name string
+
+	// OwnerOnly marks a command as an owner-only command. If this is true, permission checks will be ignored.
+	OwnerOnly bool
+
+	// SelfPermissions defines what permissions the current bot must meet to execute the command.
+	SelfPermissions int
+
+	// UserPermissions defines what permissions a user must meet to execute the command.
+	UserPermissions int
+
+	// Run defines the command's function.
+	Run CommandRunFunc
+
+	// Type defines when a command will be executed - inside direct messages, a guild or anywhere.
+	Type CommandType
 }
 
 // Context holds the data required for command execution.
 type Context struct {
+	// Channel defines the channel in which the command has been executed.
 	Channel *discordgo.Channel
-	Guild   *discordgo.Guild
-	Member  *discordgo.Member
+
+	// Guild defines the guild in which the command has been executed.
+	// Note that this may be nil.
+	Guild *discordgo.Guild
+
+	// Member defines the member in the guild in which the command has been executed.
+	// Note that, if guild is nil, this will be nil too.
+	Member *discordgo.Member
+
+	// Message defines the message that has executed this command.
 	Message *discordgo.Message
+
+	// Session defines the current session that was passed to the OnMessage handler.
 	Session *discordgo.Session
-	User    *discordgo.User
+
+	// User defines the user that has executed the command.
+	User *discordgo.User
 }
 
-// Command types; Either DM-Only, Guild-Only or both.
 const (
+	// CommandTypePrivate defines a command that cannot be executed in a guild.
 	CommandTypePrivate CommandType = iota
+
+	// CommandTypeGuild defines a command that cannot be executed in direct messages.
 	CommandTypeGuild
+
+	// CommandTypeEverywhere defines a command that can be executed anywhere.
 	CommandTypeEverywhere
 )

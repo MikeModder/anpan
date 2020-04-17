@@ -19,9 +19,9 @@ package anpan
 // New creates a new command handler.
 func New(prefixes []string, owners []string, ignoreBots, checkPerms bool) CommandHandler {
 	return CommandHandler{
-		Prefixes:         prefixes,
-		Owners:           owners,
-		IgnoreBots:       ignoreBots,
-		CheckPermissions: checkPerms,
+		prefixes:         prefixes,
+		owners:           owners,
+		ignoreBots:       ignoreBots,
+		checkPermissions: checkPerms,
 	}
 }

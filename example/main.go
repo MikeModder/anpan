@@ -22,7 +22,7 @@ func main() {
 
 	// Create a new handler and add a command.
 	handler := anpan.New([]string{"e!"}, []string{"your id", "another one"}, true, true)
-	handler.AddCommand("ping", "Check the bot's ping.", []string{"pong"}, false, false, discordgo.PermissionSendMessages, anpan.CommandTypeEverywhere, pingCommand)
+	handler.AddCommand("ping", "Check the bot's ping.", []string{"pong"}, false, false, discordgo.PermissionSendMessages, discordgo.PermissionSendMessages, anpan.CommandTypeEverywhere, pingCommand)
 	handler.SetHelpCommand("help", []string{}, discordgo.PermissionSendMessages, helpCommand)
 
 	handler.SetOnErrorFunc(func(context anpan.Context, name string, err error) {
