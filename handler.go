@@ -440,11 +440,13 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if !has {
 		c.errorFunc(context, command.Name, ErrUserInsufficientPermissions)
 		c.debugLog("User doesn't have sufficient permissions.")
+		return
 	}
 
 	if !selfHas {
 		c.errorFunc(context, command.Name, ErrSelfInsufficientPermissions)
 		c.debugLog("Bot doesn't have sufficient permissions.")
+		return
 	}
 
 	if err = command.Run(context, cmd[1:]); err != nil && c.onErrorFunc != nil {
