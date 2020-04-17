@@ -204,6 +204,8 @@ func (c *CommandHandler) permissionCheck(session *discordgo.Session, member *dis
 			return err
 		}
 
+		c.debugFunc(fmt.Sprintf("Admin check: %d", role.Permissions&discordgo.PermissionAdministrator))
+
 		if role.Permissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
 			c.debugFunc(fmt.Sprintf("Role %s has admin permission", role.ID))
 			return nil
