@@ -231,11 +231,11 @@ func (c *CommandHandler) permissionCheck(session *discordgo.Session, member *dis
 
 	c.debugFunc(fmt.Sprintf("Permissions now: %d", permissions))
 
-	if permissions&necessaryPermissions == 0 {
-		return errors.New("insufficient perms")
+	if permissions&necessaryPermissions == necessaryPermissions {
+		return nil
 	}
 
-	return nil
+	return errors.New("insufficient perms")
 }
 
 // OnMessage - You don't need to call this! Pass this to AddHandler().
