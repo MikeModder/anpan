@@ -224,7 +224,7 @@ func (c *CommandHandler) permissionCheck(session *discordgo.Session, member *dis
 		}
 	}
 
-	c.debugFunc(fmt.Sprintf("Permissions after: %d", permissions))
+	c.debugFunc(fmt.Sprintf("Permissions after: %d | necessary Permissions: %d", permissions, necessaryPermissions))
 
 	if permissions&necessaryPermissions != necessaryPermissions {
 		return errors.New("insufficient perms")
