@@ -185,35 +185,25 @@ func (c *CommandHandler) errorFunc(context Context, name string, err error) {
 	}
 }
 
-func (c *CommandHandler) permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int) error {
+func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int) error {
 	var permissions int
 
-	c.debugFunc(fmt.Sprintf("Guild: %s | Member: %s | Channel: %s | Permissions necessary: %d", guild.ID, member.User.ID, channel.ID, necessaryPermissions))
-
 	if member.User.ID == guild.OwnerID {
-		c.debugFunc("user is guild owner")
 		return nil
 	}
 
-	c.debugFunc(fmt.Sprintf("Checking roles, role count: %d", len(member.Roles)))
 	for _, roleID := range member.Roles {
 		role, err := session.State.Role(guild.ID, roleID)
 		if err != nil {
-			c.debugFunc(fmt.Sprintf("Role %s failed", roleID))
 			return err
 		}
 
-		c.debugFunc(fmt.Sprintf("Role \"%s\" (ID: %s) Permissions are %d", role.Name, role.ID, role.Permissions))
-
 		if role.Permissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
-			c.debugFunc(fmt.Sprintf("Role %s has admin permission", role.ID))
 			return nil
 		}
 
 		permissions |= role.Permissions
 	}
-
-	c.debugFunc(fmt.Sprintf("Permissions now: %d | Checking overwrites", permissions))
 
 	for _, overwrite := range channel.PermissionOverwrites {
 		if overwrite.ID == member.User.ID {
@@ -229,13 +219,11 @@ func (c *CommandHandler) permissionCheck(session *discordgo.Session, member *dis
 		}
 	}
 
-	c.debugFunc(fmt.Sprintf("Permissions now: %d", permissions))
-
-	if permissions&necessaryPermissions == necessaryPermissions {
-		return nil
+	if permissions&necessaryPermissions != necessaryPermissions {
+		return errors.New("insufficient perms")
 	}
 
-	return errors.New("insufficient perms")
+	return nil
 }
 
 // OnMessage - You don't need to call this! Pass this to AddHandler().
@@ -411,13 +399,13 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 	if c.checkPermissions && guild != nil && member != nil && selfMember != nil && (command.SelfPermissions != 0 || command.UserPermissions != 0) {
 		has = false
 
-		if err := c.permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
+		if err := permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
 			c.debugLog(fmt.Sprintf("User permission check encountered an error: %s", err.Error()))
 		} else {
 			has = true
 		}
 
-		if err := c.permissionCheck(s, selfMember, guild, channel, command.UserPermissions); err != nil {
+		if err := permissionCheck(s, selfMember, guild, channel, command.UserPermissions); err != nil {
 			c.debugLog(fmt.Sprintf("Self permission check encountered an error: %s", err.Error()))
 		} else {
 			selfHas = true
