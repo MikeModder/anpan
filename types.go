@@ -47,6 +47,7 @@ type CommandHandler struct {
 	owners           []string
 	prefixes         []string
 	prerunFunc       PrerunFunc
+	useRoutines      bool
 }
 
 // Command represents a command.

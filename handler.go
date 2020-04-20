@@ -86,6 +86,16 @@ func (c *CommandHandler) ClearDebugFunc() {
 	c.debugFunc = nil
 }
 
+// SetUseRoutines sets whether this command handler should run commands in seperate goroutines or not.
+func (c *CommandHandler) SetUseRoutines(enable bool) {
+	c.useRoutines = enable
+}
+
+// GetUseRoutines returns whether this command handler runs commands in separate goroutines or not.
+func (c *CommandHandler) GetUseRoutines() bool {
+	return c.useRoutines
+}
+
 // AddCommand adds a command to the Commands map.
 func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneronly, hidden bool, selfperms, userperms int, cmdtype CommandType, run CommandRunFunc) {
 	c.commands = append(c.commands, &Command{
@@ -284,25 +294,66 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		return
 	}
 
+	var (
+		guild      *discordgo.Guild
+		member     *discordgo.Member
+		selfMember *discordgo.Member
+	)
+
+	if guild, err = s.Guild(m.GuildID); err != nil {
+		c.debugLog(fmt.Sprintf("Couldn't retrieve guild (%s), continuing...", err.Error()))
+	}
+
+	if member, err = s.GuildMember(m.GuildID, m.Author.ID); err != nil {
+		c.debugLog(fmt.Sprintf("Couldn't retrieve member (%s), continuing...", err.Error()))
+	}
+
+	if selfMember, err = s.GuildMember(m.GuildID, s.State.User.ID); err != nil {
+		c.debugLog(fmt.Sprintf("Couldn't retrieve bot member (%s), continuing...", err.Error()))
+	}
+
+	context := Context{
+		Channel: channel,
+		Guild:   guild,
+		Member:  member,
+		Message: m.Message,
+		Session: s,
+		User:    m.Author,
+	}
+
+	if err != nil && c.onErrorFunc != nil {
+		c.onErrorFunc(context, cmd[0], err)
+	}
+
 	// Check if the command is somehow the given help command.
 	if cmd[0] != c.helpCommand.Name {
 		for _, v := range c.helpCommand.Aliases {
 			if cmd[0] == v {
-				c.helpCommand.Run(Context{
-					Session: s,
-					Channel: channel,
-					Message: m.Message,
-					User:    m.Author,
-				}, cmd[1:], c.commands, c.prefixes)
+				if c.useRoutines {
+					go func() {
+						err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
+					}()
+				} else {
+					err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
+				}
+
+				if err != nil {
+					c.errorFunc(context, cmd[0], err)
+				}
 			}
 		}
 	} else {
-		c.helpCommand.Run(Context{
-			Session: s,
-			Channel: channel,
-			Message: m.Message,
-			User:    m.Author,
-		}, cmd[1:], c.commands, c.prefixes)
+		if c.useRoutines {
+			go func() {
+				err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
+			}()
+		} else {
+			err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
+		}
+
+		if err != nil {
+			c.errorFunc(context, cmd[0], err)
+		}
 	}
 
 	// Execution will continue on if the help command wasn't found.
@@ -376,24 +427,6 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		}
 	}
 
-	var (
-		guild      *discordgo.Guild
-		member     *discordgo.Member
-		selfMember *discordgo.Member
-	)
-
-	if guild, err = s.Guild(m.GuildID); err != nil {
-		c.debugLog(fmt.Sprintf("Couldn't retrieve guild (%s), continuing...", err.Error()))
-	}
-
-	if member, err = s.GuildMember(m.GuildID, m.Author.ID); err != nil {
-		c.debugLog(fmt.Sprintf("Couldn't retrieve member (%s), continuing...", err.Error()))
-	}
-
-	if selfMember, err = s.GuildMember(m.GuildID, s.State.User.ID); err != nil {
-		c.debugLog(fmt.Sprintf("Couldn't retrieve bot member (%s), continuing...", err.Error()))
-	}
-
 	var selfHas bool
 
 	if c.checkPermissions && guild != nil && member != nil && selfMember != nil && (command.SelfPermissions != 0 || command.UserPermissions != 0) {
@@ -415,15 +448,6 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		selfHas = true
 	}
 
-	context := Context{
-		Session: s,
-		Message: m.Message,
-		User:    m.Author,
-		Channel: channel,
-		Guild:   guild,
-		Member:  member,
-	}
-
 	if !has {
 		c.errorFunc(context, command.Name, ErrUserInsufficientPermissions)
 		c.debugLog("User doesn't have sufficient permissions.")
@@ -436,8 +460,15 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		return
 	}
 
-	if err = command.Run(context, cmd[1:]); err != nil && c.onErrorFunc != nil {
-		// Run the set OnErrorFunc if an error occurs.
-		c.onErrorFunc(context, cmd[0], err)
+	if c.useRoutines {
+		go func() {
+			err = command.Run(context, cmd[1:])
+		}()
+	} else {
+		err = command.Run(context, cmd[1:])
+	}
+
+	if err != nil {
+		c.errorFunc(context, cmd[0], err)
 	}
 }

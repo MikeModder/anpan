@@ -38,15 +38,13 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 				continue
 			}
 
-			// Basic checks.
 			if commannd.Hidden || (context.Channel.Type == discordgo.ChannelTypeDM && commannd.Type == anpan.CommandTypeGuild) || (context.Channel.Type == discordgo.ChannelTypeGuildText && commannd.Type == anpan.CommandTypePrivate) {
 				return nil
 			}
 
-			// Proper English is always fun.
 			var (
 				owneronlystring = "No"
-				typestring      = "No restrictions"
+				typestring      = "Anywhere"
 			)
 
 			if commannd.OwnerOnly {
@@ -76,10 +74,16 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 				}
 			}
 
+			aliases := "**None.**"
+			if len(commannd.Aliases) > 0 {
+				aliases = strings.Join(commannd.Aliases, "`, `")
+				aliases = "`" + aliases + "`"
+			}
+
 			_, err := context.ReplyEmbed(&discordgo.MessageEmbed{
-				Title: "Help!",
-				Description: fmt.Sprintf("Help for command `%s`\n Description: `%s`\nOwner only: **%s**\nType: **%s**", commannd.Name, commannd.Description,
-					owneronlystring, typestring),
+				Title:       "Help",
+				Color:       0x08a4ff,
+				Description: fmt.Sprintf("**%s**\nAliases: %s\nOwner only: **%s**\nUsable: **%s**", commannd.Description, aliases, owneronlystring, typestring),
 				Footer: &discordgo.MessageEmbedFooter{
 					Text: fmt.Sprintf(" %s.", prefixesBuilder.String()),
 				},
@@ -88,28 +92,32 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 			return err
 		}
 
-		embed := &discordgo.MessageEmbed{
-			Title:       "Error!",
-			Description: fmt.Sprintf("`%s` is not a valid command!", args[0]),
-			Color:       0xff0000,
-		}
-
-		_, err := context.ReplyEmbed(embed)
+		_, err := context.Reply("Command `" + args[0] + "` doesn't exist.")
 		return err
 	}
 
-	count := len(commands)
-	var list string
+	var (
+		count int
+		embed = &discordgo.MessageEmbed{
+			Title: "Commands",
+			Color: 0x08a4ff,
+		}
+	)
 
 	for _, cmd := range commands {
 		if !cmd.Hidden && typeCheck(context.Channel.Type, cmd.Type) {
-			list += fmt.Sprintf("**%s** - `%s`\n", cmd.Name, cmd.Description)
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:   cmd.Name,
+				Value:  cmd.Description,
+				Inline: count%2 == 0,
+			})
+
+			count++
 		}
 	}
 
 	var footer strings.Builder
 
-	// Grammar is always fun.
 	if count == 1 {
 		footer.WriteString("There is 1 command.")
 	} else {
@@ -134,13 +142,8 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 		footer.WriteString(fmt.Sprintf("The bot's prefixes are %s.", prefixesBuilder.String()))
 	}
 
-	embed := &discordgo.MessageEmbed{
-		Title:       "Commands:",
-		Color:       0x08a4ff,
-		Description: list,
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: footer.String(),
-		},
+	embed.Footer = &discordgo.MessageEmbedFooter{
+		Text: footer.String(),
 	}
 
 	context.ReplyEmbed(embed)
