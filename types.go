@@ -29,10 +29,11 @@ type CommandType int
 
 // HelpCommand defines a help command.
 type HelpCommand struct {
-	Aliases     []string
-	Name        string
-	Permissions int
-	Run         HelpRunFunc
+	Aliases         []string
+	Name            string
+	SelfPermissions int
+	UserPermissions int
+	Run             HelpRunFunc
 }
 
 // CommandHandler contains all the data needed for the handler to function.

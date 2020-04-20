@@ -112,12 +112,13 @@ func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneron
 }
 
 // SetHelpCommand sets the help command.
-func (c *CommandHandler) SetHelpCommand(name string, aliases []string, perms int, help HelpRunFunc) {
+func (c *CommandHandler) SetHelpCommand(name string, aliases []string, selfperms, userperms int, help HelpRunFunc) {
 	c.helpCommand = &HelpCommand{
-		Aliases:     aliases,
-		Name:        name,
-		Permissions: perms,
-		Run:         help,
+		Aliases:         aliases,
+		Name:            name,
+		SelfPermissions: selfperms,
+		UserPermissions: userperms,
+		Run:             help,
 	}
 }
 
@@ -236,6 +237,64 @@ func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild
 	return nil
 }
 
+func (c *CommandHandler) runHelpCommand(context Context, selfMember *discordgo.Member, event *discordgo.MessageCreate, help *HelpCommand, cmd []string) {
+	var (
+		err     error
+		has     bool
+		selfHas bool
+	)
+
+	c.debugLog(fmt.Sprintf("Executing %s, firing Pre-Run Function.", cmd[0]))
+	if c.prerunFunc != nil {
+		if !c.prerunFunc(context.Session, event, help.Name, cmd[1:]) {
+			return
+		}
+	}
+
+	if c.checkPermissions && context.Guild != nil && context.Member != nil && selfMember != nil && (help.SelfPermissions != 0 || help.UserPermissions != 0) {
+		has = false
+
+		if err := permissionCheck(context.Session, context.Member, context.Guild, context.Channel, help.UserPermissions); err != nil {
+			c.debugLog(fmt.Sprintf("User permission check encountered an error: %s", err.Error()))
+		} else {
+			has = true
+		}
+
+		if err := permissionCheck(context.Session, selfMember, context.Guild, context.Channel, help.UserPermissions); err != nil {
+			c.debugLog(fmt.Sprintf("Self permission check encountered an error: %s", err.Error()))
+		} else {
+			selfHas = true
+		}
+	} else {
+		has = true
+		selfHas = true
+	}
+
+	if !has {
+		c.errorFunc(context, help.Name, ErrUserInsufficientPermissions)
+		c.debugLog("User doesn't have sufficient permissions.")
+		return
+	}
+
+	if !selfHas {
+		c.errorFunc(context, help.Name, ErrSelfInsufficientPermissions)
+		c.debugLog("Bot doesn't have sufficient permissions.")
+		return
+	}
+
+	if c.useRoutines {
+		go func() {
+			err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
+		}()
+	} else {
+		err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
+	}
+
+	if err != nil {
+		c.errorFunc(context, cmd[0], err)
+	}
+}
+
 // OnMessage - You don't need to call this! Pass this to AddHandler().
 func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
@@ -262,16 +321,13 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		}
 	}
 
-	// If none of the prefixes were found, return.
 	if !has {
 		return
 	}
 
-	// Since we just checked for a prefix, now we need to trim off the prefix
 	cmd := strings.Split(strings.TrimPrefix(content, prefix), " ")
-	c.debugLog(cmd[0])
+	c.debugLog("Got command " + cmd[0])
 
-	// Before continuing, we need the actual channel itself.
 	channel, err := s.Channel(m.ChannelID)
 	if err != nil {
 		c.debugLog("Failed to get the channel.")
@@ -282,7 +338,6 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		}, cmd[0], ErrDataUnavailable)
 	}
 
-	// Check if the author is a bot, and deny entry if IgnoreBots is true.
 	if m.Author.Bot && c.ignoreBots {
 		c.debugLog("Author is bot and IgnoreBots is true.")
 		c.errorFunc(Context{
@@ -325,39 +380,16 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		c.onErrorFunc(context, cmd[0], err)
 	}
 
-	// Check if the command is somehow the given help command.
 	if cmd[0] != c.helpCommand.Name {
 		for _, v := range c.helpCommand.Aliases {
 			if cmd[0] == v {
-				if c.useRoutines {
-					go func() {
-						err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
-					}()
-				} else {
-					err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
-				}
-
-				if err != nil {
-					c.errorFunc(context, cmd[0], err)
-				}
+				c.runHelpCommand(context, selfMember, m, c.helpCommand, cmd)
 			}
 		}
 	} else {
-		if c.useRoutines {
-			go func() {
-				err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
-			}()
-		} else {
-			err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
-		}
-
-		if err != nil {
-			c.errorFunc(context, cmd[0], err)
-		}
+		c.runHelpCommand(context, selfMember, m, c.helpCommand, cmd)
 	}
 
-	// Execution will continue on if the help command wasn't found.
-	// Let's search for the command.
 	for !found {
 		for _, v := range c.commands {
 			if cmd[0] == v.Name {
@@ -374,54 +406,31 @@ func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCre
 		}
 	}
 
-	// If the command is still nil, return an error to the OnErrorFunc and stop.
 	if command == nil {
 		c.debugLog("Invalid command.")
-		c.errorFunc(Context{
-			Session: s,
-			Channel: channel,
-			Message: m.Message,
-			User:    m.Author,
-		}, cmd[0], ErrCommandNotFound)
+		c.errorFunc(context, cmd[0], ErrCommandNotFound)
 
 		return
 	}
 
 	if channel.Type == discordgo.ChannelTypeDM && command.Type == CommandTypeGuild {
-		c.errorFunc(Context{
-			Session: s,
-			Channel: channel,
-			Message: m.Message,
-			User:    m.Author,
-		}, command.Name, ErrDMOnly)
+		c.errorFunc(context, command.Name, ErrDMOnly)
 		c.debugLog("Tried to run a DM-only command on a guild.")
 		return
 	} else if channel.Type == discordgo.ChannelTypeGuildText && command.Type == CommandTypePrivate {
-		c.errorFunc(Context{
-			Session: s,
-			Channel: channel,
-			Message: m.Message,
-			User:    m.Author,
-		}, command.Name, ErrGuildOnly)
-		c.debugLog("Tried to run a guild-only command inside DM.")
+		c.errorFunc(context, command.Name, ErrGuildOnly)
+		c.debugLog("Tried to run a guild-only command inside DMs.")
 		return
 	}
 
-	// Check if it's an owner-only command, and if it is make sure the author is an owner.
 	if command.OwnerOnly && !c.IsOwner(m.Author.ID) {
-		c.errorFunc(Context{
-			Session: s,
-			Channel: channel,
-			Message: m.Message,
-			User:    m.Author,
-		}, command.Name, ErrOwnerOnly)
-		c.debugLog("Owner only command.")
+		c.errorFunc(context, command.Name, ErrOwnerOnly)
+		c.debugLog("Owner-only command.")
 		return
 	}
 
 	c.debugLog(fmt.Sprintf("Executing %s, firing Pre-Run Function.", command.Name))
 	if c.prerunFunc != nil {
-		// Run the user's pre-run function.
 		if !c.prerunFunc(s, m, command.Name, cmd[1:]) {
 			return
 		}
