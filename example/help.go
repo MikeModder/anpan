@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/MikeModder/anpan"
@@ -9,6 +10,8 @@ import (
 )
 
 func helpCommand(context anpan.Context, args []string, commands []*anpan.Command, prefixes []string) error {
+	// This is a check for a command to make sure only appropriate commands are shown.
+	// TODO: Add a permission check
 	typeCheck := func(chn discordgo.ChannelType, cmd anpan.CommandType) bool {
 		switch cmd {
 		case anpan.CommandTypeEverywhere:
@@ -32,39 +35,48 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 		return false
 	}
 
+	// Here we found out that the user inquires for one specific command.
 	if len(args) >= 1 {
-		for _, commannd := range commands {
-			if args[0] != commannd.Name {
+		for _, command := range commands {
+			// If this command isn't it, continue searching.
+			if args[0] != command.Name {
 				continue
 			}
 
-			if commannd.Hidden || (context.Channel.Type == discordgo.ChannelTypeDM && commannd.Type == anpan.CommandTypeGuild) || (context.Channel.Type == discordgo.ChannelTypeGuildText && commannd.Type == anpan.CommandTypePrivate) {
+			// If this command is supposed to stay hidden, or if this isn't the correct place, stop the command.
+			if command.Hidden || !typeCheck(context.Channel.Type, command.Type) {
 				return nil
 			}
 
+			// Some useful declarations.
 			var (
 				owneronlystring = "No"
 				typestring      = "Anywhere"
 			)
 
-			if commannd.OwnerOnly {
+			// Is this command only accessible by the owners?
+			if command.OwnerOnly {
 				owneronlystring = "Yes"
 			}
 
-			switch commannd.Type {
+			// What type do we actually have?
+			switch command.Type {
 			case anpan.CommandTypePrivate:
 				typestring = "Private"
 				break
+
 			case anpan.CommandTypeGuild:
 				typestring = "Guild-only"
 				break
 			}
 
+			// Time to tell the user about the prefixes.
 			prefixesBuilder := strings.Builder{}
 			if len(prefixes) == 1 {
-				prefixesBuilder.WriteString(fmt.Sprintf("The bot's prefix is %s", prefixes[0]))
+				prefixesBuilder.WriteString(fmt.Sprintf("The prefix is %s", prefixes[0]))
 			} else {
-				prefixesBuilder.WriteString("The bot's prefixes are ")
+				prefixesBuilder.WriteString("The prefixes are ")
+
 				for i, prefix := range prefixes {
 					if i+1 == len(prefixes) {
 						prefixesBuilder.WriteString(fmt.Sprintf("and %s", prefix))
@@ -74,37 +86,67 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 				}
 			}
 
+			// Maybe our command has a few nicknames...
 			aliases := "**None.**"
-			if len(commannd.Aliases) > 0 {
-				aliases = strings.Join(commannd.Aliases, "`, `")
+			if len(command.Aliases) > 0 {
+				aliases = strings.Join(command.Aliases, "`, `")
 				aliases = "`" + aliases + "`"
 			}
 
+			// ..but anyway! Time to return the message.
 			_, err := context.ReplyEmbed(&discordgo.MessageEmbed{
 				Title:       "Help",
 				Color:       0x08a4ff,
-				Description: fmt.Sprintf("**%s**\nAliases: %s\nOwner only: **%s**\nUsable: **%s**", commannd.Description, aliases, owneronlystring, typestring),
+				Description: fmt.Sprintf("**%s**\nAliases: %s\nOwner only: **%s**\nUsable: **%s**", command.Description, aliases, owneronlystring, typestring),
 				Footer: &discordgo.MessageEmbedFooter{
 					Text: fmt.Sprintf(" %s.", prefixesBuilder.String()),
 				},
 			})
 
+			// We're done.
 			return err
 		}
 
+		// We've not found anything :(
 		_, err := context.Reply("Command `" + args[0] + "` doesn't exist.")
 		return err
 	}
 
+	// Well, we now know the user wants to know what commands we actually have.
 	var (
-		count int
-		embed = &discordgo.MessageEmbed{
+		count          int
+		commandsSorted = make([]*anpan.Command, len(commands))
+		embed          = &discordgo.MessageEmbed{
 			Title: "Commands",
 			Color: 0x08a4ff,
 		}
+		names = make([]string, len(commands))
 	)
 
-	for _, cmd := range commands {
+	// Get all names...
+	for i, cmd := range commands {
+		names[i] = cmd.Name
+	}
+
+	// ...sort them alphabetically...
+	sort.Strings(names)
+
+	// ...and arrange the commands accordingly.
+	for i, v := range names {
+		for _, v2 := range commands {
+			if v2.Name == v {
+				commandsSorted[i] = v2
+				break
+			}
+		}
+
+		if commandsSorted[i] == nil {
+			return fmt.Errorf("Sort failure")
+		}
+	}
+
+	// Now that we've sorted the commands, we can show them to the user.
+	for _, cmd := range commandsSorted {
 		if !cmd.Hidden && typeCheck(context.Channel.Type, cmd.Type) {
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 				Name:   cmd.Name,
@@ -116,8 +158,10 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 		}
 	}
 
+	// We want a footer for additional information.
 	var footer strings.Builder
 
+	// How many commands do we have?
 	if count == 1 {
 		footer.WriteString("There is 1 command.")
 	} else {
@@ -127,7 +171,7 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 	footer.WriteString(" | ")
 
 	if len(prefixes) == 1 {
-		footer.WriteString(fmt.Sprintf("The bot's prefix is %s.", prefixes[0]))
+		footer.WriteString(fmt.Sprintf("The prefix is %s.", prefixes[0]))
 	} else {
 		prefixesBuilder := strings.Builder{}
 
@@ -139,13 +183,13 @@ func helpCommand(context anpan.Context, args []string, commands []*anpan.Command
 			}
 		}
 
-		footer.WriteString(fmt.Sprintf("The bot's prefixes are %s.", prefixesBuilder.String()))
+		footer.WriteString(fmt.Sprintf("The prefixes are %s.", prefixesBuilder.String()))
 	}
 
-	embed.Footer = &discordgo.MessageEmbedFooter{
-		Text: footer.String(),
-	}
+	// Let them know about the prefixes.
+	embed.Footer = &discordgo.MessageEmbedFooter{Text: footer.String()}
 
-	context.ReplyEmbed(embed)
-	return nil
+	// Time to give them help.
+	_, err := context.ReplyEmbed(embed)
+	return err
 }

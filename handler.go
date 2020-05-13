@@ -1,3 +1,22 @@
+// Copyright (c) 2019 MikeModder/MikeModder007, Apfel
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software.
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 package anpan
 
 /* handler.go:
@@ -8,11 +27,19 @@ package anpan
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
+
+// GetCheckPermissions returns whether the message handler checks the permissions or not.
+func (c *CommandHandler) GetCheckPermissions(enable bool) bool {
+	return c.checkPermissions
+}
+
+// SetCheckPermissions sets whether to check for permissions or not.
+func (c *CommandHandler) SetCheckPermissions(enable bool) {
+	c.checkPermissions = enable
+}
 
 // GetEnable returns whether the message handler is actually enabled or not.
 func (c *CommandHandler) GetEnable() bool {
@@ -24,81 +51,14 @@ func (c *CommandHandler) SetEnable(enable bool) {
 	c.enabled = enable
 }
 
-// AddPrefix adds a single prefix to the prefixes slice.
-func (c *CommandHandler) AddPrefix(prefix string) {
-	c.prefixes = append(c.prefixes, prefix)
+// GetIgnoreBots returns whether the bot ignores other users marked as bots or not.
+func (c *CommandHandler) GetIgnoreBots() bool {
+	return c.ignoreBots
 }
 
-// RemovePrefix removes a single prefix from the prefixes slice.
-func (c *CommandHandler) RemovePrefix(prefix string) {
-	for i, v := range c.prefixes {
-		if v == prefix {
-			c.prefixes = append(c.prefixes[:i], c.prefixes[i+1:]...)
-			break
-		}
-	}
-}
-
-// SetPrefixes overwrites all prefixes within the prefixes slice.
-func (c *CommandHandler) SetPrefixes(prefixes []string) {
-	c.prefixes = prefixes
-}
-
-// GetPrefixes returns the current prefixes slice.
-func (c *CommandHandler) GetPrefixes() []string {
-	return c.prefixes
-}
-
-// SetPrerunFunc sets the function to run before the command handler's OnMessage.
-func (c *CommandHandler) SetPrerunFunc(prf PrerunFunc) {
-	c.prerunFunc = prf
-}
-
-// GetPrerunFunc returns the current Prerun function.
-func (c *CommandHandler) GetPrerunFunc() PrerunFunc {
-	return c.prerunFunc
-}
-
-// ClearPrerunFunc removes the current Prerun function.
-func (c *CommandHandler) ClearPrerunFunc() {
-	c.prerunFunc = func(session *discordgo.Session, event *discordgo.MessageCreate, name string, args []string) bool {
-		return true
-	}
-}
-
-// SetOnErrorFunc sets the function to run when a command returns an error
-func (c *CommandHandler) SetOnErrorFunc(oef OnErrorFunc) {
-	c.onErrorFunc = oef
-}
-
-// GetOnErrorFunc returns the current OnError function.
-func (c *CommandHandler) GetOnErrorFunc() OnErrorFunc {
-	return c.onErrorFunc
-}
-
-// ClearOnErrorFunc clears the onerror function
-func (c *CommandHandler) ClearOnErrorFunc() {
-	c.onErrorFunc = nil
-}
-
-// SetDebugFunc sets the given debug function as the debugging function for the command handler.
-func (c *CommandHandler) SetDebugFunc(df DebugFunc) {
-	c.debugFunc = df
-}
-
-// GetDebugFunc returns the currently set debug function.
-func (c *CommandHandler) GetDebugFunc() DebugFunc {
-	return c.debugFunc
-}
-
-// ClearDebugFunc clears the Debug function
-func (c *CommandHandler) ClearDebugFunc() {
-	c.debugFunc = nil
-}
-
-// SetUseRoutines sets whether this command handler should run commands in seperate goroutines or not.
-func (c *CommandHandler) SetUseRoutines(enable bool) {
-	c.useRoutines = enable
+// SetIgnoreBots sets whether to ignore other bots or not.
+func (c *CommandHandler) SetIgnoreBots(enable bool) {
+	c.ignoreBots = enable
 }
 
 // GetUseRoutines returns whether this command handler runs commands in separate goroutines or not.
@@ -106,8 +66,120 @@ func (c *CommandHandler) GetUseRoutines() bool {
 	return c.useRoutines
 }
 
+// SetUseRoutines sets whether this command handler should run commands in separate goroutines or not.
+func (c *CommandHandler) SetUseRoutines(enable bool) {
+	c.useRoutines = enable
+}
+
+// AddPrefix adds a prefix to the handler.
+func (c *CommandHandler) AddPrefix(prefix string) {
+	c.prefixes = append(c.prefixes, prefix)
+}
+
+// RemovePrefix removes the prefix from the handler, if it exists.
+func (c *CommandHandler) RemovePrefix(prefix string) {
+	for i, v := range c.prefixes {
+		if v == prefix {
+			copy(c.prefixes[i:], c.prefixes[i+1:])
+			c.prefixes[len(c.prefixes)-1] = ""
+			c.prefixes = c.prefixes[:len(c.prefixes)-1]
+
+			break
+		}
+	}
+}
+
+// GetAllPrefixes returns the current prefixes slice.
+func (c *CommandHandler) GetAllPrefixes() []string {
+	return c.prefixes
+}
+
+// SetAllPrefixes overwrites all prefixes within the prefixes slice.
+func (c *CommandHandler) SetAllPrefixes(prefixes []string) {
+	c.prefixes = prefixes
+}
+
+// ClearDebugFunc clears the Debug function
+// Refer to DebugFunc for more information.
+func (c *CommandHandler) ClearDebugFunc() {
+	c.debugFunc = nil
+}
+
+// GetDebugFunc returns the current debugging function.
+// Refer to DebugFunc for more information.
+func (c *CommandHandler) GetDebugFunc() DebugFunc {
+	return c.debugFunc
+}
+
+// SetDebugFunc sets the given debug function as the debugging function for the command handler.
+func (c *CommandHandler) SetDebugFunc(df DebugFunc) {
+	c.debugFunc = df
+}
+
+// ClearOnErrorFunc removes the current OnError function.
+// Refer to OnErrorFunc for more details.
+func (c *CommandHandler) ClearOnErrorFunc() {
+	c.onErrorFunc = nil
+}
+
+// GetOnErrorFunc returns the current OnError function.
+// Refer to OnErrorFunc for more details.
+func (c *CommandHandler) GetOnErrorFunc() OnErrorFunc {
+	return c.onErrorFunc
+}
+
+// SetOnErrorFunc sets the supplied OnErrorFunc as the one to use.
+// Refer to OnErrorFunc for more details.
+func (c *CommandHandler) SetOnErrorFunc(oef OnErrorFunc) {
+	c.onErrorFunc = oef
+}
+
+// ClearPrerunFunc removes the current PrerunFunc.
+// Refer to PrerunFunc for more info.
+func (c *CommandHandler) ClearPrerunFunc() {
+	c.prerunFunc = func(_ *discordgo.Session, _ *discordgo.MessageCreate, _ string, _ []string) bool {
+		return true
+	}
+}
+
+// GetPrerunFunc returns the current PrerunFunc.
+// Refer to PrerunFunc for more info.
+func (c *CommandHandler) GetPrerunFunc() PrerunFunc {
+	return c.prerunFunc
+}
+
+// SetPrerunFunc sets the supplied PrerunFunc as the one to use.
+// Refer to PrerunFunc for more info.
+func (c *CommandHandler) SetPrerunFunc(prf PrerunFunc) {
+	c.prerunFunc = prf
+}
+
 // AddCommand adds a command to the Commands map.
-func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneronly, hidden bool, selfperms, userperms int, cmdtype CommandType, run CommandRunFunc) {
+//
+// Parameters:
+// name			- The name of the this command.
+// description	- The description for this command.
+// aliases		- Additional aliases used for this command.
+// owneronly	- Whether only owners can access this command or not.
+// hidden		- Whether a help command should hide this command or not.
+// selfperms	- The necessary permissions for this command. Set this to "0" if any level is fine.
+// userperms	- The necessary permissions for the user to meet to use this command. Set this to "0" if any level is fine.
+// cmdtype		- The appropriate command type for this command. Use this to limit commands to direct messages or guilds. Refer to CommandType for help.
+// function		- The command itself. Refer to CommandFunc for help.
+//
+// Errors:
+// ErrCommandAlreadyRegistered -> There's already a (help) command with this name.
+func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneronly, hidden bool, selfperms, userperms int, cmdtype CommandType, run CommandFunc) error {
+	for _, v := range c.commands {
+		if v.Name == name {
+			return ErrCommandAlreadyRegistered
+		}
+	}
+
+	if c.helpCommand != nil && c.helpCommand.Name == name {
+		return ErrCommandAlreadyRegistered
+	}
+
 	c.commands = append(c.commands, &Command{
 		Aliases:         aliases,
 		Description:     desc,
@@ -119,33 +191,69 @@ func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneron
 		Run:             run,
 		Type:            cmdtype,
 	})
+
+	return nil
+}
+
+// RemoveCommand removes the supplied command from the command array by using its name.
+//
+// Errors:
+// ErrCommandNotFound -> The given name doesn't belong to any command.
+func (c *CommandHandler) RemoveCommand(name string) error {
+	for i, v := range c.commands {
+		if v.Name == name {
+			copy(c.commands[i:], c.commands[i+1:])
+			c.commands[len(c.commands)-1] = nil
+			c.commands = c.commands[:len(c.commands)-1]
+
+			return nil
+		}
+	}
+
+	return ErrCommandNotFound
+}
+
+// GetHelpCommand returns the current set help command.
+// Refer to HelpCommandFunc for help.
+func (c *CommandHandler) GetHelpCommand() *HelpCommand {
+	return c.helpCommand
 }
 
 // SetHelpCommand sets the help command.
-func (c *CommandHandler) SetHelpCommand(name string, aliases []string, selfperms, userperms int, help HelpRunFunc) {
+//
+// Parameters:
+// name			- The name of the help command; this should be "help" under normal circumstances.
+// aliases		- Additional aliases used for the help command.
+// selfperms	- The necessary permissions for this help command. Set this to "0" if any level is fine.
+// userperms	- The necessary permissions for the user to meet to use this help command. Set this to "0" if any level is fine.
+// function		- The help command itself. Refer to HelpCommandFunc for help.
+//
+// Notes:
+// The command handler always checks for the help command first.
+//
+// Errors:
+// ErrCommandAlreadyRegistered	-> There's already another command that has been registered with the same name.
+func (c *CommandHandler) SetHelpCommand(name string, aliases []string, selfperms, userperms int, function HelpCommandFunc) error {
+	for _, v := range c.commands {
+		if v.Name == name {
+			return ErrCommandAlreadyRegistered
+		}
+	}
+
 	c.helpCommand = &HelpCommand{
 		Aliases:         aliases,
 		Name:            name,
 		SelfPermissions: selfperms,
 		UserPermissions: userperms,
-		Run:             help,
+		Run:             function,
 	}
+
+	return nil
 }
 
 // ClearHelpCommand clears the current help command.
 func (c *CommandHandler) ClearHelpCommand() {
 	c.helpCommand = nil
-}
-
-// RemoveCommand removes a command from the Commands map.
-// Note that this only searches for the name, aliases don'tt count.
-func (c *CommandHandler) RemoveCommand(name string) {
-	for i, v := range c.commands {
-		if v.Name == name {
-			c.commands[i] = nil
-			return
-		}
-	}
 }
 
 // AddOwner adds a user ID as an owner.
@@ -184,25 +292,15 @@ func (c *CommandHandler) IsOwner(id string) bool {
 	return false
 }
 
-// IgnoreBots sets whether to ignore bots or not.
-func (c *CommandHandler) IgnoreBots(enable bool) {
-	c.ignoreBots = enable
-}
-
-// CheckPermissions sets whether to check for permissions or not.
-func (c *CommandHandler) CheckPermissions(enable bool) {
-	c.checkPermissions = enable
-}
-
 func (c *CommandHandler) debugLog(out string) {
 	if c.debugFunc != nil {
 		c.debugFunc(out)
 	}
 }
 
-func (c *CommandHandler) errorFunc(context Context, name string, err error) {
+func (c *CommandHandler) throwError(context Context, command *Command, err error) {
 	if c.onErrorFunc != nil {
-		c.onErrorFunc(context, name, err)
+		c.onErrorFunc(context, command, err)
 	}
 }
 
@@ -249,246 +347,4 @@ func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild
 	return nil
 }
 
-func (c *CommandHandler) runHelpCommand(context Context, selfMember *discordgo.Member, event *discordgo.MessageCreate, help *HelpCommand, cmd []string) {
-	var (
-		err     error
-		has     bool
-		selfHas bool
-	)
-
-	c.debugLog(fmt.Sprintf("Executing %s, firing Pre-Run Function.", cmd[0]))
-	if c.prerunFunc != nil {
-		if !c.prerunFunc(context.Session, event, help.Name, cmd[1:]) {
-			return
-		}
-	}
-
-	if c.checkPermissions && context.Guild != nil && context.Member != nil && selfMember != nil && (help.SelfPermissions != 0 || help.UserPermissions != 0) {
-		has = false
-
-		if err := permissionCheck(context.Session, context.Member, context.Guild, context.Channel, help.UserPermissions); err != nil {
-			c.debugLog(fmt.Sprintf("User permission check encountered an error: %s", err.Error()))
-		} else {
-			has = true
-		}
-
-		if err := permissionCheck(context.Session, selfMember, context.Guild, context.Channel, help.UserPermissions); err != nil {
-			c.debugLog(fmt.Sprintf("Self permission check encountered an error: %s", err.Error()))
-		} else {
-			selfHas = true
-		}
-	} else {
-		has = true
-		selfHas = true
-	}
-
-	if !has {
-		c.errorFunc(context, help.Name, ErrUserInsufficientPermissions)
-		c.debugLog("User doesn't have sufficient permissions.")
-		return
-	}
-
-	if !selfHas {
-		c.errorFunc(context, help.Name, ErrSelfInsufficientPermissions)
-		c.debugLog("Bot doesn't have sufficient permissions.")
-		return
-	}
-
-	if c.useRoutines {
-		go func() {
-			err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
-		}()
-	} else {
-		err = c.helpCommand.Run(context, cmd[1:], c.commands, c.prefixes)
-	}
-
-	if err != nil {
-		c.errorFunc(context, cmd[0], err)
-	}
-}
-
-func (c *CommandHandler) onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if !c.enabled || m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	// Parse all content.
-	content := m.Content
-	c.debugLog("Received: \"" + content + "\"")
-
-	var (
-		command *Command
-		has     bool
-		found   bool
-		prefix  string
-	)
-
-	// Check for one of the prefixes. If the content doesn't start with one of the prefixes, return.
-	for i := 0; i < len(c.prefixes); i++ {
-		prefix = c.prefixes[i]
-		if strings.HasPrefix(content, prefix) {
-			has = true
-			break
-		}
-	}
-
-	if !has {
-		return
-	}
-
-	cmd := strings.Split(strings.TrimPrefix(content, prefix), " ")
-	c.debugLog("Got command " + cmd[0])
-
-	channel, err := s.Channel(m.ChannelID)
-	if err != nil {
-		c.debugLog("Failed to get the channel.")
-		c.errorFunc(Context{
-			Session: s,
-			Message: m.Message,
-			User:    m.Author,
-		}, cmd[0], ErrDataUnavailable)
-	}
-
-	if m.Author.Bot && c.ignoreBots {
-		c.debugLog("Author is bot and IgnoreBots is true.")
-		c.errorFunc(Context{
-			Session: s,
-			Channel: channel,
-			Message: m.Message,
-			User:    m.Author,
-		}, "", ErrBotBlocked)
-		return
-	}
-
-	var (
-		guild      *discordgo.Guild
-		member     *discordgo.Member
-		selfMember *discordgo.Member
-	)
-
-	if guild, err = s.Guild(m.GuildID); err != nil {
-		c.debugLog(fmt.Sprintf("Couldn't retrieve guild (%s), continuing...", err.Error()))
-	}
-
-	if member, err = s.GuildMember(m.GuildID, m.Author.ID); err != nil {
-		c.debugLog(fmt.Sprintf("Couldn't retrieve member (%s), continuing...", err.Error()))
-	}
-
-	if selfMember, err = s.GuildMember(m.GuildID, s.State.User.ID); err != nil {
-		c.debugLog(fmt.Sprintf("Couldn't retrieve bot member (%s), continuing...", err.Error()))
-	}
-
-	context := Context{
-		Channel: channel,
-		Guild:   guild,
-		Member:  member,
-		Message: m.Message,
-		Session: s,
-		User:    m.Author,
-	}
-
-	if err != nil && c.onErrorFunc != nil {
-		c.onErrorFunc(context, cmd[0], err)
-	}
-
-	if cmd[0] != c.helpCommand.Name {
-		for _, v := range c.helpCommand.Aliases {
-			if cmd[0] == v {
-				c.runHelpCommand(context, selfMember, m, c.helpCommand, cmd)
-			}
-		}
-	} else {
-		c.runHelpCommand(context, selfMember, m, c.helpCommand, cmd)
-	}
-
-	for !found {
-		for _, v := range c.commands {
-			if cmd[0] == v.Name {
-				command = v
-				found = true
-			}
-
-			for _, v2 := range v.Aliases {
-				if cmd[0] == v2 {
-					command = v
-					found = true
-				}
-			}
-		}
-	}
-
-	if command == nil {
-		c.debugLog("Invalid command.")
-		c.errorFunc(context, cmd[0], ErrCommandNotFound)
-
-		return
-	}
-
-	if channel.Type == discordgo.ChannelTypeDM && command.Type == CommandTypeGuild {
-		c.errorFunc(context, command.Name, ErrDMOnly)
-		c.debugLog("Tried to run a DM-only command on a guild.")
-		return
-	} else if channel.Type == discordgo.ChannelTypeGuildText && command.Type == CommandTypePrivate {
-		c.errorFunc(context, command.Name, ErrGuildOnly)
-		c.debugLog("Tried to run a guild-only command inside DMs.")
-		return
-	}
-
-	if command.OwnerOnly && !c.IsOwner(m.Author.ID) {
-		c.errorFunc(context, command.Name, ErrOwnerOnly)
-		c.debugLog("Owner-only command.")
-		return
-	}
-
-	c.debugLog(fmt.Sprintf("Executing %s, firing Pre-Run Function.", command.Name))
-	if c.prerunFunc != nil {
-		if !c.prerunFunc(s, m, command.Name, cmd[1:]) {
-			return
-		}
-	}
-
-	var selfHas bool
-
-	if c.checkPermissions && guild != nil && member != nil && selfMember != nil && (command.SelfPermissions != 0 || command.UserPermissions != 0) {
-		has = false
-
-		if err := permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
-			c.debugLog(fmt.Sprintf("User permission check encountered an error: %s", err.Error()))
-		} else {
-			has = true
-		}
-
-		if err := permissionCheck(s, selfMember, guild, channel, command.UserPermissions); err != nil {
-			c.debugLog(fmt.Sprintf("Self permission check encountered an error: %s", err.Error()))
-		} else {
-			selfHas = true
-		}
-	} else {
-		has = true
-		selfHas = true
-	}
-
-	if !has {
-		c.errorFunc(context, command.Name, ErrUserInsufficientPermissions)
-		c.debugLog("User doesn't have sufficient permissions.")
-		return
-	}
-
-	if !selfHas {
-		c.errorFunc(context, command.Name, ErrSelfInsufficientPermissions)
-		c.debugLog("Bot doesn't have sufficient permissions.")
-		return
-	}
-
-	if c.useRoutines {
-		go func() {
-			err = command.Run(context, cmd[1:])
-		}()
-	} else {
-		err = command.Run(context, cmd[1:])
-	}
-
-	if err != nil {
-		c.errorFunc(context, cmd[0], err)
-	}
-}
+func (c *CommandHandler) onMessage(s *discordgo.Session, event *discordgo.MessageCreate) {}

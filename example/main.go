@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/MikeModder/anpan"
@@ -12,49 +9,61 @@ import (
 )
 
 func main() {
-	fmt.Println("Example bot for anpan. Version 1.1.0.")
+	fmt.Println("Example bot for anpan.\nVersion 1.2.0.\nInitializing...")
 
+	// Here we create an appropriate client.
 	client, err := discordgo.New("Bot <your token here>")
 	if err != nil {
 		fmt.Printf("Creating a session failed: \"%s\".\n", err.Error())
 		return
 	}
 
-	// Create a new handler and add a command, as well as registering the help command.
+	// In here we create a handler with the supplied data...
 	handler := anpan.New(client, []string{"e!"}, []string{"your id", "another one"}, true, true, true)
+
+	// ...then we register a command...
 	handler.AddCommand("ping", "Check the bot's ping.", []string{"pong"}, false, false, discordgo.PermissionSendMessages, discordgo.PermissionSendMessages, anpan.CommandTypeEverywhere, pingCommand)
+
+	// ...and a help command.
 	handler.SetHelpCommand("help", []string{}, discordgo.PermissionSendMessages, discordgo.PermissionSendMessages, helpCommand)
 
-	handler.SetOnErrorFunc(func(context anpan.Context, name string, err error) {
-		fmt.Printf("An error occurred for command \"%s\": \"%s\".\n", name, err.Error())
+	// And, of course, a function to let us know if something went wrong.
+	handler.SetOnErrorFunc(func(context anpan.Context, command *anpan.Command, err error) {
+		fmt.Printf("An error occurred for command \"%s\": \"%s\".\n", command.Name, err.Error())
 	})
 
+	// Now, time to connect...
 	if err = client.Open(); err != nil {
 		fmt.Printf("Opening the session failed: \"%s\".\n", err.Error())
 		return
 	}
 
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-sc
+	// ...and wait until we need to exit.
+	anpan.WaitForInterrupt()
 
+	// Now we close the client, assuming it's still open.
 	fmt.Println("Shutting down.")
 	if err := client.Close(); err != nil {
 		fmt.Printf("Closing the session failed. \"%s\". Ignoring.\n", err.Error())
 	}
+
+	// And we're done!
 }
 
-func pingCommand(ctx anpan.Context, args []string) error {
+func pingCommand(ctx anpan.Context, _ []string) error {
+	// First, we need a message...
 	msg, err := ctx.Reply("Pong!")
 	if err != nil {
 		return err
 	}
 
+	// ...for a timestamp...
 	sent, err := msg.Timestamp.Parse()
 	if err != nil {
 		return err
 	}
 
+	// ...to use some math for the final value.
 	_, err = ctx.Session.ChannelMessageEdit(ctx.Message.ChannelID, msg.ID, fmt.Sprintf("Pong! Ping took *%s*!", time.Now().Sub(sent).String()))
 	return err
 }

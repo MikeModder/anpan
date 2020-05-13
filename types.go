@@ -1,3 +1,22 @@
+// Copyright (c) 2019 MikeModder/MikeModder007, Apfel
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software.
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 package anpan
 
 /* types.go:
@@ -8,78 +27,85 @@ package anpan
 
 import "github.com/bwmarrin/discordgo"
 
-// CommandRunFunc is a command's run function.
-type CommandRunFunc func(Context, []string) error
+// CommandFunc defines a normal command's function.
+//
+// Parameters:
+// Context	-> The context supplied by the command handler. Refer to Context for help.
+// []string	-> The arguments sent along with the command, basically the rest of the message after the command and the prefix. Note that this is split by spaces.
+type CommandFunc func(Context, []string) error
 
 // DebugFunc is used for debugging output.
+//
+// Parameters:
+// string	-> The returned message.
 type DebugFunc func(string)
 
-// HelpRunFunc is used for definitions of a help command.
-type HelpRunFunc func(Context, []string, []*Command, []string) error
+// HelpCommandFunc defines a help command's function.
+// Context		-> The context supplied by the command handler. Refer to Context for help.
+// []string		-> The arguments sent along with the command, basically the rest of the message after the command and the prefix. Note that this is split by spaces. This can be used to show help for a specific command.
+// []*Command	-> The command slice, containing all commands.
+// []string		-> The prefixes used by the command handler.
+type HelpCommandFunc func(Context, []string, []*Command, []string) error
 
 // PrerunFunc is the type for the function that can be run before command execution.
 // If all goes well, return true. otherwise, false.
 type PrerunFunc func(*discordgo.Session, *discordgo.MessageCreate, string, []string) bool
 
 // OnErrorFunc is the type for the function that can be run.
-type OnErrorFunc func(Context, string, error)
+//
+// Parameters:
+// Context	-> The context supplied by the command handler. Refer to Context for help.
+// *Command	-> The command in question.
+// error	-> The returned error.
+type OnErrorFunc func(Context, *Command, error)
 
 // CommandType defines where commands can be used.
 type CommandType int
 
 // HelpCommand defines a help command.
+// Refer to SetHelpCommand for help.
 type HelpCommand struct {
 	Aliases         []string
 	Name            string
 	SelfPermissions int
 	UserPermissions int
-	Run             HelpRunFunc
+	Run             HelpCommandFunc
 }
 
 // CommandHandler contains all the data needed for the handler to function.
 // Anything inside here must be controlled with the appropriate Get/Set/Remove function.
 type CommandHandler struct {
-	checkPermissions bool
-	commands         []*Command
-	debugFunc        DebugFunc
-	helpCommand      *HelpCommand
 	enabled          bool
+	checkPermissions bool
 	ignoreBots       bool
-	onErrorFunc      OnErrorFunc
-	owners           []string
-	prefixes         []string
-	prerunFunc       PrerunFunc
 	useRoutines      bool
+
+	owners   []string
+	prefixes []string
+
+	commands    []*Command
+	helpCommand *HelpCommand
+
+	debugFunc   DebugFunc
+	onErrorFunc OnErrorFunc
+	prerunFunc  PrerunFunc
 }
 
 // Command represents a command.
+// Refer to AddCommand for help.
 type Command struct {
-	// Aliases contains all aliases for the command.
-	// In most cases, these'll be less favored than the name, or ignored.
-	Aliases []string
-
-	// Hidden defines a "hidden" command - it shouldn't be shown in a help message.
-	Hidden bool
-
-	// Description defines what the command does.
+	Aliases     []string
 	Description string
+	Name        string
 
-	// Name defines the name of the command.
-	Name string
-
-	// OwnerOnly marks a command as an owner-only command. If this is true, permission checks will be ignored.
+	Hidden    bool
 	OwnerOnly bool
 
-	// SelfPermissions defines what permissions the current bot must meet to execute the command.
 	SelfPermissions int
-
-	// UserPermissions defines what permissions a user must meet to execute the command.
 	UserPermissions int
 
-	// Run defines the command's function.
-	Run CommandRunFunc
+	Run CommandFunc
 
-	// Type defines when a command will be executed - inside direct messages, a guild or anywhere.
 	Type CommandType
 }
 
@@ -89,7 +115,7 @@ type Context struct {
 	Channel *discordgo.Channel
 
 	// Guild defines the guild in which the command has been executed.
-	// Note that this may be nil.
+	// Note that this may be nil under certain circumstances.
 	Guild *discordgo.Guild
 
 	// Member defines the member in the guild in which the command has been executed.
@@ -99,7 +125,7 @@ type Context struct {
 	// Message defines the message that has executed this command.
 	Message *discordgo.Message
 
-	// Session defines the current session that was passed to the OnMessage handler.
+	// Session defines the session that this command handler run on top of.
 	Session *discordgo.Session
 
 	// User defines the user that has executed the command.
@@ -107,12 +133,12 @@ type Context struct {
 }
 
 const (
-	// CommandTypePrivate defines a command that cannot be executed in a guild.
-	CommandTypePrivate CommandType = iota
+	// CommandTypeEverywhere defines a command that can be executed anywhere.
+	CommandTypeEverywhere CommandType = iota
 
 	// CommandTypeGuild defines a command that cannot be executed in direct messages.
 	CommandTypeGuild
 
-	// CommandTypeEverywhere defines a command that can be executed anywhere.
-	CommandTypeEverywhere
+	// CommandTypePrivate defines a command that cannot be executed in a guild.
+	CommandTypePrivate
 )
