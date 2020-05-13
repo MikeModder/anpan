@@ -27,6 +27,8 @@ package anpan
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -157,15 +159,15 @@ func (c *CommandHandler) SetPrerunFunc(prf PrerunFunc) {
 // AddCommand adds a command to the Commands map.
 //
 // Parameters:
-// name			- The name of the this command.
-// description	- The description for this command.
-// aliases		- Additional aliases used for this command.
-// owneronly	- Whether only owners can access this command or not.
-// hidden		- Whether a help command should hide this command or not.
-// selfperms	- The necessary permissions for this command. Set this to "0" if any level is fine.
-// userperms	- The necessary permissions for the user to meet to use this command. Set this to "0" if any level is fine.
-// cmdtype		- The appropriate command type for this command. Use this to limit commands to direct messages or guilds. Refer to CommandType for help.
-// function		- The command itself. Refer to CommandFunc for help.
+// name         - The name of the this command.
+// description  - The description for this command.
+// aliases      - Additional aliases used for this command.
+// owneronly    - Whether only owners can access this command or not.
+// hidden       - Whether a help command should hide this command or not.
+// selfperms    - The necessary permissions for this command. Set this to "0" if any level is fine.
+// userperms    - The necessary permissions for the user to meet to use this command. Set this to "0" if any level is fine.
+// cmdtype      - The appropriate command type for this command. Use this to limit commands to direct messages or guilds. Refer to CommandType for help.
+// function     - The command itself. Refer to CommandFunc for help.
 //
 // Errors:
 // ErrCommandAlreadyRegistered -> There's already a (help) command with this name.
@@ -222,17 +224,17 @@ func (c *CommandHandler) GetHelpCommand() *HelpCommand {
 // SetHelpCommand sets the help command.
 //
 // Parameters:
-// name			- The name of the help command; this should be "help" under normal circumstances.
-// aliases		- Additional aliases used for the help command.
-// selfperms	- The necessary permissions for this help command. Set this to "0" if any level is fine.
-// userperms	- The necessary permissions for the user to meet to use this help command. Set this to "0" if any level is fine.
-// function		- The help command itself. Refer to HelpCommandFunc for help.
+// name         - The name of the help command; this should be "help" under normal circumstances.
+// aliases      - Additional aliases used for the help command.
+// selfperms    - The necessary permissions for this help command. Set this to "0" if any level is fine.
+// userperms    - The necessary permissions for the user to meet to use this help command. Set this to "0" if any level is fine.
+// function     - The help command itself. Refer to HelpCommandFunc for help.
 //
 // Notes:
 // The command handler always checks for the help command first.
 //
 // Errors:
-// ErrCommandAlreadyRegistered	-> There's already another command that has been registered with the same name.
+// ErrCommandAlreadyRegistered  -> There's already another command that has been registered with the same name.
 func (c *CommandHandler) SetHelpCommand(name string, aliases []string, selfperms, userperms int, function HelpCommandFunc) error {
 	for _, v := range c.commands {
 		if v.Name == name {
@@ -292,15 +294,15 @@ func (c *CommandHandler) IsOwner(id string) bool {
 	return false
 }
 
-func (c *CommandHandler) debugLog(out string) {
+func (c *CommandHandler) debugLog(format string, a ...interface{}) {
 	if c.debugFunc != nil {
-		c.debugFunc(out)
+		c.debugFunc(fmt.Sprintf(format, a...))
 	}
 }
 
-func (c *CommandHandler) throwError(context Context, command *Command, err error) {
+func (c *CommandHandler) throwError(context Context, command *Command, args []string, err error) {
 	if c.onErrorFunc != nil {
-		c.onErrorFunc(context, command, err)
+		c.onErrorFunc(context, command, args, err)
 	}
 }
 
@@ -347,4 +349,147 @@ func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild
 	return nil
 }
 
-func (c *CommandHandler) onMessage(s *discordgo.Session, event *discordgo.MessageCreate) {}
+func (c *CommandHandler) onMessage(s *discordgo.Session, event *discordgo.MessageCreate) {
+	if !c.enabled || event.Author.ID == s.State.User.ID {
+		return
+	}
+
+	c.debugLog("Received message (%s) by user \"%s\" (%s): \"%s\"", event.Message.ID, event.Author.String(), event.Author.ID, event.Message.Content)
+
+	var (
+		has    bool
+		prefix string
+
+		command *Command
+
+		channel    *discordgo.Channel
+		guild      *discordgo.Guild
+		member     *discordgo.Member
+		selfMember *discordgo.Member
+
+		err error
+	)
+
+	context := Context{
+		Channel: channel,
+		Guild:   guild,
+		Member:  member,
+		Message: event.Message,
+		User:    event.Author,
+		Session: s,
+	}
+
+	for i := 0; i < len(c.prefixes); i++ {
+		prefix = c.prefixes[i]
+
+		if strings.HasPrefix(event.Message.Content, prefix) {
+			has = true
+			break
+		}
+	}
+
+	if !has {
+		c.debugLog("Message %s doesn't contain any of the prefixes", event.Message.ID)
+		return
+	}
+
+	content := strings.Split(strings.TrimPrefix(event.Message.Content, prefix), " ")
+	c.debugLog("Parsed message %s: \"%s\"", event.Message.ID, content)
+
+	for _, v := range c.commands {
+		if content[0] == v.Name {
+			command = v
+			break
+		}
+
+		for _, alias := range v.Aliases {
+			if content[0] == alias {
+				command = v
+				break
+			}
+		}
+	}
+
+	if command == nil {
+		c.throwError(context, nil, content[1:], ErrCommandNotFound)
+		return
+	}
+
+	if channel, err = s.Channel(event.ChannelID); err != nil {
+		c.debugLog("Channel fetching failed: \"%s\"", err.Error())
+		c.throwError(context, command, content[1:], ErrDataUnavailable)
+		return
+	}
+
+	if channel.Type == discordgo.ChannelTypeDM {
+		if c.useRoutines {
+			go func() { err = command.Run(context, content[1:]) }()
+		} else {
+			err = command.Run(context, content[1:])
+		}
+
+		if err != nil {
+			c.throwError(context, command, content[1:], err)
+		}
+
+		return
+	}
+
+	if guild, err = s.Guild(event.GuildID); err != nil {
+		c.debugLog("Guild fetching failed: \"%s\"", err.Error())
+		c.throwError(context, command, content[1:], ErrDataUnavailable)
+		return
+	}
+
+	if member, err = s.GuildMember(event.GuildID, event.Author.ID); err != nil {
+		c.debugLog("Member fetching failed: \"%s\"", err.Error())
+		c.throwError(context, command, content[1:], ErrDataUnavailable)
+		return
+	}
+
+	if selfMember, err = s.GuildMember(event.GuildID, s.State.User.ID); err != nil {
+		c.debugLog("Bot Member fetching failed: \"%s\"", err.Error())
+		c.throwError(context, command, content[1:], ErrDataUnavailable)
+		return
+	}
+
+	if !c.checkPermissions {
+		if c.useRoutines {
+			go func() { err = command.Run(context, content[1:]) }()
+		} else {
+			err = command.Run(context, content[1:])
+		}
+
+		if err != nil {
+			c.throwError(context, command, content[1:], err)
+		}
+
+		return
+	}
+
+	if !(command.SelfPermissions > 0) || !(command.UserPermissions > 0) {
+		return
+	}
+
+	if err = permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
+		c.debugLog("Permission check for member failed: \"%s\"", err.Error())
+		c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
+		return
+	}
+
+	if err = permissionCheck(s, selfMember, guild, channel, command.SelfPermissions); err != nil {
+		c.debugLog("Permission check for bot failed: \"%s\"", err.Error())
+		c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
+		return
+	}
+
+	if c.useRoutines {
+		go func() { err = command.Run(context, content[1:]) }()
+	} else {
+		err = command.Run(context, content[1:])
+	}
+
+	if err != nil {
+		c.throwError(context, command, content[1:], err)
+	}
+}

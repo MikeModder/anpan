@@ -28,7 +28,7 @@ func main() {
 	handler.SetHelpCommand("help", []string{}, discordgo.PermissionSendMessages, discordgo.PermissionSendMessages, helpCommand)
 
 	// And, of course, a function to let us know if something went wrong.
-	handler.SetOnErrorFunc(func(context anpan.Context, command *anpan.Command, err error) {
+	handler.SetOnErrorFunc(func(context anpan.Context, command *anpan.Command, _ []string, err error) {
 		fmt.Printf("An error occurred for command \"%s\": \"%s\".\n", command.Name, err.Error())
 	})
 

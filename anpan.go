@@ -44,6 +44,7 @@ import (
 // useRoutines		- Whether to execute commands outside the event's routine.
 //
 // Notes:
+// State caching must be enabled. StateEnabled shall not be false then.
 // If you want to use a mention/ping as a prefix, just add it as a prefix in the format of "<@bot id>", replacing "bot id" with the bot's User ID.
 // This automatically adds the MessageCreate handler to your session.
 func New(session *discordgo.Session, prefixes []string, owners []string, ignoreBots, checkPermssions, useRoutines bool) CommandHandler {

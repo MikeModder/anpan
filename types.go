@@ -56,8 +56,9 @@ type PrerunFunc func(*discordgo.Session, *discordgo.MessageCreate, string, []str
 // Parameters:
 // Context	-> The context supplied by the command handler. Refer to Context for help.
 // *Command	-> The command in question.
+// []string		-> The arguments sent along with the command, basically the rest of the message after the command and the prefix. Note that this is split by spaces. This can be used to show help for a specific command.
 // error	-> The returned error.
-type OnErrorFunc func(Context, *Command, error)
+type OnErrorFunc func(Context, *Command, []string, error)
 
 // CommandType defines where commands can be used.
 type CommandType int
