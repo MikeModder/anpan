@@ -14,6 +14,16 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// GetEnable returns whether the message handler is actually enabled or not.
+func (c *CommandHandler) GetEnable() bool {
+	return c.enabled
+}
+
+// SetEnable sets whether the message handler shall doing its job.
+func (c *CommandHandler) SetEnable(enable bool) {
+	c.enabled = enable
+}
+
 // AddPrefix adds a single prefix to the prefixes slice.
 func (c *CommandHandler) AddPrefix(prefix string) {
 	c.prefixes = append(c.prefixes, prefix)
@@ -203,6 +213,8 @@ func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild
 		return nil
 	}
 
+	permissions |= guild.Roles[0].Permissions // everyone role
+
 	for _, roleID := range member.Roles {
 		role, err := session.State.Role(guild.ID, roleID)
 		if err != nil {
@@ -295,9 +307,8 @@ func (c *CommandHandler) runHelpCommand(context Context, selfMember *discordgo.M
 	}
 }
 
-// OnMessage - You don't need to call this! Pass this to AddHandler().
-func (c *CommandHandler) OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
+func (c *CommandHandler) onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if !c.enabled || m.Author.ID == s.State.User.ID {
 		return
 	}
 

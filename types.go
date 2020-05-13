@@ -37,12 +37,13 @@ type HelpCommand struct {
 }
 
 // CommandHandler contains all the data needed for the handler to function.
-// Anything inside here must be controlled with Get/Set/Remove function.
+// Anything inside here must be controlled with the appropriate Get/Set/Remove function.
 type CommandHandler struct {
 	checkPermissions bool
 	commands         []*Command
 	debugFunc        DebugFunc
 	helpCommand      *HelpCommand
+	enabled          bool
 	ignoreBots       bool
 	onErrorFunc      OnErrorFunc
 	owners           []string
