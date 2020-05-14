@@ -57,7 +57,7 @@ func New(session *discordgo.Session, prefixes []string, owners []string, ignoreB
 		useRoutines:      useRoutines,
 	}
 
-	session.AddHandler(handler.onMessage)
+	session.AddHandler(handler.MessageHandler)
 
 	return handler
 }

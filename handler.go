@@ -349,7 +349,7 @@ func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild
 	return nil
 }
 
-func (c *CommandHandler) onMessage(s *discordgo.Session, event *discordgo.MessageCreate) {
+func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.MessageCreate) {
 	if !c.enabled || event.Author.ID == s.State.User.ID {
 		return
 	}
