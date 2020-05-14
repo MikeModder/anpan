@@ -139,7 +139,7 @@ func (c *CommandHandler) SetOnErrorFunc(oef OnErrorFunc) {
 // ClearPrerunFunc removes the current PrerunFunc.
 // Refer to PrerunFunc for more info.
 func (c *CommandHandler) ClearPrerunFunc() {
-	c.prerunFunc = func(_ *discordgo.Session, _ *discordgo.MessageCreate, _ string, _ []string) bool {
+	c.prerunFunc = func(_ Context, _ *Command, _ []string) bool {
 		return true
 	}
 }
@@ -363,6 +363,7 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		prefix string
 
 		command *Command
+		help    *HelpCommand
 
 		context Context
 
@@ -390,6 +391,152 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 
 	content := strings.Split(strings.TrimPrefix(event.Message.Content, prefix), " ")
 	c.debugLog("Parsed message %s: \"%s\"", event.Message.ID, content)
+
+	if content[0] == c.helpCommand.Name {
+		help = c.helpCommand
+	}
+
+	if help == nil {
+		for _, v := range c.helpCommand.Aliases {
+			if content[0] == v {
+				help = c.helpCommand
+			}
+		}
+	}
+
+	if help != nil {
+		if channel, err = s.Channel(event.ChannelID); err != nil {
+			c.debugLog("Channel fetching failed: \"%s\"", err.Error())
+			c.throwError(context, &Command{
+				Name:            c.helpCommand.Name,
+				SelfPermissions: c.helpCommand.SelfPermissions,
+				UserPermissions: c.helpCommand.UserPermissions,
+				Type:            CommandTypeEverywhere,
+			}, content[1:], ErrDataUnavailable)
+			return
+		}
+
+		context.Channel = channel
+
+		if channel.Type == discordgo.ChannelTypeDM {
+			if !c.prerunFunc(context, &Command{
+				Name:            c.helpCommand.Name,
+				SelfPermissions: c.helpCommand.SelfPermissions,
+				UserPermissions: c.helpCommand.UserPermissions,
+				Type:            CommandTypeEverywhere,
+			}, content[1:]) {
+				return
+			}
+
+			if c.useRoutines {
+				go func() { err = help.Run(context, content[1:], c.commands, c.prefixes) }()
+			} else {
+				err = help.Run(context, content[1:], c.commands, c.prefixes)
+			}
+
+			if err != nil {
+				c.throwError(context, &Command{
+					Name:            c.helpCommand.Name,
+					SelfPermissions: c.helpCommand.SelfPermissions,
+					UserPermissions: c.helpCommand.UserPermissions,
+					Type:            CommandTypeEverywhere,
+				}, content[1:], err)
+			}
+
+			return
+		}
+
+		if guild, err = s.Guild(event.GuildID); err != nil {
+			c.debugLog("Guild fetching failed: \"%s\"", err.Error())
+			c.throwError(context, &Command{
+				Name:            c.helpCommand.Name,
+				SelfPermissions: c.helpCommand.SelfPermissions,
+				UserPermissions: c.helpCommand.UserPermissions,
+				Type:            CommandTypeEverywhere,
+			}, content[1:], ErrDataUnavailable)
+			return
+		}
+
+		if member, err = s.GuildMember(event.GuildID, event.Author.ID); err != nil {
+			c.debugLog("Member fetching failed: \"%s\"", err.Error())
+			c.throwError(context, &Command{
+				Name:            c.helpCommand.Name,
+				SelfPermissions: c.helpCommand.SelfPermissions,
+				UserPermissions: c.helpCommand.UserPermissions,
+				Type:            CommandTypeEverywhere,
+			}, content[1:], ErrDataUnavailable)
+			return
+		}
+
+		context.Guild = guild
+		context.Member = member
+
+		if selfMember, err = s.GuildMember(event.GuildID, s.State.User.ID); err != nil {
+			c.debugLog("Bot Member fetching failed: \"%s\"", err.Error())
+			c.throwError(context, command, content[1:], ErrDataUnavailable)
+			return
+		}
+
+		if !c.checkPermissions {
+			if !c.prerunFunc(context, &Command{
+				Name:            c.helpCommand.Name,
+				SelfPermissions: c.helpCommand.SelfPermissions,
+				UserPermissions: c.helpCommand.UserPermissions,
+				Type:            CommandTypeEverywhere,
+			}, content[1:]) {
+				return
+			}
+
+			if c.useRoutines {
+				go func() { err = help.Run(context, content[1:], c.commands, c.prefixes) }()
+			} else {
+				err = help.Run(context, content[1:], c.commands, c.prefixes)
+			}
+
+			if err != nil {
+				c.throwError(context, command, content[1:], err)
+			}
+
+			return
+		}
+
+		if !(command.SelfPermissions > 0) || !(command.UserPermissions > 0) {
+			return
+		}
+
+		if err = permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
+			c.debugLog("Permission check for member failed: \"%s\"", err.Error())
+			c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
+			return
+		}
+
+		if err = permissionCheck(s, selfMember, guild, channel, command.SelfPermissions); err != nil {
+			c.debugLog("Permission check for bot failed: \"%s\"", err.Error())
+			c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
+			return
+		}
+
+		if c.useRoutines {
+			if !c.prerunFunc(context, &Command{
+				Name:            c.helpCommand.Name,
+				SelfPermissions: c.helpCommand.SelfPermissions,
+				UserPermissions: c.helpCommand.UserPermissions,
+				Type:            CommandTypeEverywhere,
+			}, content[1:]) {
+				return
+			}
+
+			go func() { err = help.Run(context, content[1:], c.commands, c.prefixes) }()
+		} else {
+			err = help.Run(context, content[1:], c.commands, c.prefixes)
+		}
+
+		if err != nil {
+			c.throwError(context, command, content[1:], err)
+		}
+
+		return
+	}
 
 	for _, v := range c.commands {
 		if content[0] == v.Name {
@@ -419,6 +566,10 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	context.Channel = channel
 
 	if channel.Type == discordgo.ChannelTypeDM {
+		if !c.prerunFunc(context, command, content[1:]) {
+			return
+		}
+
 		if c.useRoutines {
 			go func() { err = command.Run(context, content[1:]) }()
 		} else {
@@ -447,6 +598,10 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	context.Guild = guild
 	context.Member = member
 
+	if !c.prerunFunc(context, command, content[1:]) {
+		return
+	}
+
 	if selfMember, err = s.GuildMember(event.GuildID, s.State.User.ID); err != nil {
 		c.debugLog("Bot Member fetching failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrDataUnavailable)
@@ -454,6 +609,10 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	}
 
 	if !c.checkPermissions {
+		if !c.prerunFunc(context, command, content[1:]) {
+			return
+		}
+
 		if c.useRoutines {
 			go func() { err = command.Run(context, content[1:]) }()
 		} else {

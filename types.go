@@ -49,7 +49,15 @@ type HelpCommandFunc func(Context, []string, []*Command, []string) error
 
 // PrerunFunc is the type for the function that can be run before command execution.
 // If all goes well, return true. otherwise, false.
-type PrerunFunc func(*discordgo.Session, *discordgo.MessageCreate, string, []string) bool
+//
+// Parameters:
+// Context				-> The supplied content.
+// *Command				-> The command that is about to be executed.
+// []string				-> // []string		-> The arguments sent along with the command, basically the rest of the message after the command and the prefix. Note that this is split by spaces. This can be used to show help for a specific command.
+//
+// Notes:
+// This is executed before the actual command, unless the guild object is not nil, then it's run before the permission check.
+type PrerunFunc func(Context, *Command, []string) bool
 
 // OnErrorFunc is the type for the function that can be run.
 //
