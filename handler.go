@@ -362,22 +362,11 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 
 		command *Command
 
-		channel    *discordgo.Channel
-		guild      *discordgo.Guild
-		member     *discordgo.Member
+		context    Context
 		selfMember *discordgo.Member
 
 		err error
 	)
-
-	context := Context{
-		Channel: channel,
-		Guild:   guild,
-		Member:  member,
-		Message: event.Message,
-		User:    event.Author,
-		Session: s,
-	}
 
 	for i := 0; i < len(c.prefixes); i++ {
 		prefix = c.prefixes[i]
@@ -415,13 +404,13 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		return
 	}
 
-	if channel, err = s.Channel(event.ChannelID); err != nil {
+	if context.Channel, err = s.Channel(event.ChannelID); err != nil {
 		c.debugLog("Channel fetching failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrDataUnavailable)
 		return
 	}
 
-	if channel.Type == discordgo.ChannelTypeDM {
+	if context.Channel.Type == discordgo.ChannelTypeDM {
 		if c.useRoutines {
 			go func() { err = command.Run(context, content[1:]) }()
 		} else {
@@ -435,13 +424,13 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		return
 	}
 
-	if guild, err = s.Guild(event.GuildID); err != nil {
+	if context.Guild, err = s.Guild(event.GuildID); err != nil {
 		c.debugLog("Guild fetching failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrDataUnavailable)
 		return
 	}
 
-	if member, err = s.GuildMember(event.GuildID, event.Author.ID); err != nil {
+	if context.Member, err = s.GuildMember(event.GuildID, event.Author.ID); err != nil {
 		c.debugLog("Member fetching failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrDataUnavailable)
 		return
@@ -471,13 +460,13 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		return
 	}
 
-	if err = permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
+	if err = permissionCheck(s, context.Member, context.Guild, context.Channel, command.UserPermissions); err != nil {
 		c.debugLog("Permission check for member failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
 		return
 	}
 
-	if err = permissionCheck(s, selfMember, guild, channel, command.SelfPermissions); err != nil {
+	if err = permissionCheck(s, selfMember, context.Guild, context.Channel, command.SelfPermissions); err != nil {
 		c.debugLog("Permission check for bot failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
 		return
