@@ -23,8 +23,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 /* Package anpan:
@@ -36,7 +34,6 @@ import (
 // New creates a new command handler.
 //
 // Parameters:
-// session			- The session to use for the commands. This is also used for the message handler.
 // prefixes 		- The prefixes to use for the command handler.
 // owners			- The owners of this application; these are used for Owner-Only commands.
 // ignoreBots		- Whether to ignore users marked as bots or not.
@@ -44,11 +41,11 @@ import (
 // useRoutines		- Whether to execute commands outside the event's routine.
 //
 // Notes:
+// Refer to MessageHandler to properly activate the command handler.
 // State caching must be enabled. StateEnabled shall not be false then.
 // If you want to use a mention/ping as a prefix, just add it as a prefix in the format of "<@bot id>", replacing "bot id" with the bot's User ID.
-// This automatically adds the MessageCreate handler to your session.
-func New(session *discordgo.Session, prefixes []string, owners []string, ignoreBots, checkPermssions, useRoutines bool) CommandHandler {
-	handler := CommandHandler{
+func New(prefixes []string, owners []string, ignoreBots, checkPermssions, useRoutines bool) CommandHandler {
+	return CommandHandler{
 		enabled:          true,
 		prefixes:         prefixes,
 		owners:           owners,
@@ -56,10 +53,6 @@ func New(session *discordgo.Session, prefixes []string, owners []string, ignoreB
 		checkPermissions: checkPermssions,
 		useRoutines:      useRoutines,
 	}
-
-	session.AddHandler(handler.MessageHandler)
-
-	return handler
 }
 
 // WaitForInterrupt makes your application wait for an interrupt.

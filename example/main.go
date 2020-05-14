@@ -19,7 +19,8 @@ func main() {
 	}
 
 	// In here we create a handler with the supplied data...
-	handler := anpan.New(client, []string{"e!"}, []string{"your id", "another one"}, true, true, true)
+	handler := anpan.New([]string{"e!"}, []string{"your id", "another one"}, true, true, true)
+	client.AddHandler(handler.MessageHandler)
 
 	// ...then we register a command...
 	handler.AddCommand("ping", "Check the bot's ping.", []string{"pong"}, false, false, discordgo.PermissionSendMessages, discordgo.PermissionSendMessages, anpan.CommandTypeEverywhere, pingCommand)
