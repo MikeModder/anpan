@@ -375,6 +375,9 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		err error
 	)
 
+	context.Message = event.Message
+	context.User = event.Author
+
 	for i := 0; i < len(c.prefixes); i++ {
 		prefix = c.prefixes[i]
 
@@ -500,17 +503,17 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 			return
 		}
 
-		if !(command.SelfPermissions > 0) || !(command.UserPermissions > 0) {
+		if !(c.helpCommand.SelfPermissions > 0) || !(c.helpCommand.UserPermissions > 0) {
 			return
 		}
 
-		if err = permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
+		if err = permissionCheck(s, member, guild, channel, help.UserPermissions); err != nil {
 			c.debugLog("Permission check for member failed: \"%s\"", err.Error())
 			c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
 			return
 		}
 
-		if err = permissionCheck(s, selfMember, guild, channel, command.SelfPermissions); err != nil {
+		if err = permissionCheck(s, selfMember, guild, channel, help.SelfPermissions); err != nil {
 			c.debugLog("Permission check for bot failed: \"%s\"", err.Error())
 			c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
 			return
