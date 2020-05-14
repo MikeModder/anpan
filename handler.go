@@ -376,6 +376,7 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	)
 
 	context.Message = event.Message
+	context.Session = s
 	context.User = event.Author
 
 	for i := 0; i < len(c.prefixes); i++ {
