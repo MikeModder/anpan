@@ -120,6 +120,9 @@ type Command struct {
 
 // Context holds the data required for command execution.
 type Context struct {
+	// Handler represents the handler on which this command was registered on.
+	Handler *CommandHandler
+
 	// Channel defines the channel in which the command has been executed.
 	Channel *discordgo.Channel
 

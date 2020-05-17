@@ -375,6 +375,7 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		err error
 	)
 
+	context.Handler = c
 	context.Message = event.Message
 	context.Session = s
 	context.User = event.Author
