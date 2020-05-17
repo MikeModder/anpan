@@ -562,6 +562,12 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		return
 	}
 
+	if command.OwnerOnly && !c.IsOwner(event.Author.ID) {
+		c.debugLog("User tried to run an owner-only command")
+		c.throwError(context, command, content[1:], ErrOwnerOnly)
+		return
+	}
+
 	if channel, err = s.Channel(event.ChannelID); err != nil {
 		c.debugLog("Channel fetching failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrDataUnavailable)
@@ -597,6 +603,18 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	if member, err = s.GuildMember(event.GuildID, event.Author.ID); err != nil {
 		c.debugLog("Member fetching failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrDataUnavailable)
+		return
+	}
+
+	if command.Type == CommandTypePrivate && guild != nil {
+		c.debugLog("Tried executing a private command on a guild")
+		c.throwError(context, command, content[1:], ErrDMOnly)
+		return
+	}
+
+	if command.Type == CommandTypeGuild && guild == nil {
+		c.debugLog("Tried executing a guild command outside of one")
+		c.throwError(context, command, content[1:], ErrGuildOnly)
 		return
 	}
 
