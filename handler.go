@@ -577,6 +577,12 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	context.Channel = channel
 
 	if channel.Type == discordgo.ChannelTypeDM {
+		if command.Type == CommandTypeGuild {
+			c.debugLog("Tried executing a guild command outside of one")
+			c.throwError(context, command, content[1:], ErrGuildOnly)
+			return
+		}
+
 		if !c.prerunFunc(context, command, content[1:]) {
 			return
 		}
