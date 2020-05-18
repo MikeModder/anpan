@@ -307,6 +307,10 @@ func (c *CommandHandler) throwError(context Context, command *Command, args []st
 }
 
 func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int) error {
+	if necessaryPermissions == 0 {
+		return nil
+	}
+
 	var permissions int
 
 	if member.User.ID == guild.OwnerID {
