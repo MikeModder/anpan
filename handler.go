@@ -659,10 +659,6 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		return
 	}
 
-	if !(command.SelfPermissions > 0) || !(command.UserPermissions > 0) {
-		return
-	}
-
 	if err = permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
 		c.debugLog("Permission check for member failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
