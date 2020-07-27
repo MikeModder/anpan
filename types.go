@@ -1,4 +1,4 @@
-// Copyright (c) 2019 MikeModder/MikeModder007, Apfel
+// Copyright (c) 2019-2020 MikeModder/MikeModder007, Apfel
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@ package anpan
 /* types.go:
  * Declares all types used for and within anpan.
  *
- * anpan (c) 2020 MikeModder/MikeModder007, Apfel
+ * anpan (c) 2019-2020 MikeModder/MikeModder007, Apfel
  */
 
 import "github.com/bwmarrin/discordgo"
