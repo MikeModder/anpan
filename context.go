@@ -50,7 +50,7 @@ func (c *Context) ReplyComplex(message string, tts bool, embed *discordgo.Messag
 	return c.Session.ChannelMessageSendComplex(c.Channel.ID, &discordgo.MessageSend{
 		Content: message,
 		Embed:   embed,
-		Tts:     tts,
+		TTS:     tts,
 		Files:   files,
 	})
 }
