@@ -428,7 +428,7 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		context.Channel = channel
 
 		if channel.Type == discordgo.ChannelTypeDM {
-			if !c.prerunFunc(context, &Command{
+			if c.prerunFunc != nil && !c.prerunFunc(context, &Command{
 				Name:            c.helpCommand.Name,
 				SelfPermissions: c.helpCommand.SelfPermissions,
 				UserPermissions: c.helpCommand.UserPermissions,
@@ -487,7 +487,7 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		}
 
 		if !c.checkPermissions {
-			if !c.prerunFunc(context, &Command{
+			if c.prerunFunc != nil && !c.prerunFunc(context, &Command{
 				Name:            c.helpCommand.Name,
 				SelfPermissions: c.helpCommand.SelfPermissions,
 				UserPermissions: c.helpCommand.UserPermissions,
@@ -587,7 +587,7 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 			return
 		}
 
-		if !c.prerunFunc(context, command, content[1:]) {
+		if c.prerunFunc != nil && !c.prerunFunc(context, command, content[1:]) {
 			return
 		}
 
@@ -631,10 +631,6 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	context.Guild = guild
 	context.Member = member
 
-	if !c.prerunFunc(context, command, content[1:]) {
-		return
-	}
-
 	if selfMember, err = s.GuildMember(event.GuildID, s.State.User.ID); err != nil {
 		c.debugLog("Bot Member fetching failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrDataUnavailable)
@@ -668,6 +664,10 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	if err = permissionCheck(s, selfMember, guild, channel, command.SelfPermissions); err != nil {
 		c.debugLog("Permission check for bot failed: \"%s\"", err.Error())
 		c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
+		return
+	}
+
+	if c.prerunFunc != nil && !c.prerunFunc(context, command, content[1:]) {
 		return
 	}
 

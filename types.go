@@ -48,12 +48,13 @@ type DebugFunc func(string)
 type HelpCommandFunc func(Context, []string, []*Command, []string) error
 
 // PrerunFunc is the type for the function that can be run before command execution.
+// It is executed after any permission checks and the likes but run before the command itself.
 // If all goes well, return true. otherwise, false.
 //
 // Parameters:
 // Context				-> The supplied content.
 // *Command				-> The command that is about to be executed.
-// []string				-> // []string		-> The arguments sent along with the command, basically the rest of the message after the command and the prefix. Note that this is split by spaces. This can be used to show help for a specific command.
+// []string				-> The arguments sent along with the command, basically the rest of the message after the command and the prefix. Note that this is split by spaces. This can be used to show help for a specific command.
 //
 // Notes:
 // This is executed before the actual command, unless the guild object is not nil, then it's run before the permission check.

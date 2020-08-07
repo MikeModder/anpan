@@ -29,8 +29,14 @@ func main() {
 	handler.SetHelpCommand("help", []string{}, discordgo.PermissionSendMessages, discordgo.PermissionSendMessages, helpCommand)
 
 	// And, of course, a function to let us know if something went wrong.
-	handler.SetOnErrorFunc(func(context anpan.Context, command *anpan.Command, _ []string, err error) {
+	handler.SetOnErrorFunc(func(context anpan.Context, command *anpan.Command, content []string, err error) {
 		fmt.Printf("An error occurred for command \"%s\": \"%s\".\n", command.Name, err.Error())
+	})
+
+	// This function is fired after all available checks and before the command itself.
+	handler.SetPrerunFunc(func(context anpan.Context, command *anpan.Command, content []string) bool {
+		fmt.Printf("Command \"%s\" is being run by \"%s#%s\" (ID: %s).\n", command.Name, context.User.Username, context.User.Discriminator, context.User.ID)
+		return true
 	})
 
 	// Now, time to connect...
@@ -65,6 +71,6 @@ func pingCommand(ctx anpan.Context, _ []string) error {
 	}
 
 	// ...to use some math for the final value.
-	_, err = ctx.Session.ChannelMessageEdit(ctx.Message.ChannelID, msg.ID, fmt.Sprintf("Pong! Ping took *%s*!", time.Now().Sub(sent).String()))
+	_, err = ctx.Session.ChannelMessageEdit(ctx.Message.ChannelID, msg.ID, fmt.Sprintf("Pong! Ping took **%dms**!", time.Now().Sub(sent).Milliseconds()))
 	return err
 }
