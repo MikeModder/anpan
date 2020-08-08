@@ -44,14 +44,13 @@ import (
 // Refer to MessageHandler to properly activate the command handler.
 // State caching must be enabled. StateEnabled shall not be false then.
 // If you want to use a mention/ping as a prefix, just add it as a prefix in the format of "<@bot id>", replacing "bot id" with the bot's User ID.
-func New(prefixes []string, owners []string, ignoreBots, checkPermssions, useRoutines bool) CommandHandler {
+func New(prefixes []string, owners []string, ignoreBots, checkPermssions bool) CommandHandler {
 	return CommandHandler{
 		enabled:          true,
 		prefixes:         prefixes,
 		owners:           owners,
 		ignoreBots:       ignoreBots,
 		checkPermissions: checkPermssions,
-		useRoutines:      useRoutines,
 	}
 }
 
