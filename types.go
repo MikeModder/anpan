@@ -88,7 +88,7 @@ type CommandHandler struct {
 	enabled          bool
 	checkPermissions bool
 	ignoreBots       bool
-	useRoutines      bool
+	useState         bool
 
 	owners   []string
 	prefixes []string

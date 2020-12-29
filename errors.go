@@ -29,29 +29,29 @@ import "errors"
 
 var (
 	// ErrBotBlocked is thrown when the message handler encounters a bot, but ignoring bots was set to true.
-	ErrBotBlocked = errors.New("The given author was a bot and the IgnoreBots setting is true")
+	ErrBotBlocked = errors.New("anpan: The given author was a bot and the IgnoreBots setting is true")
 
 	// ErrCommandAlreadyRegistered is thrown when a command by the same name was registered previously.
-	ErrCommandAlreadyRegistered = errors.New("Another command was already registered by this name")
+	ErrCommandAlreadyRegistered = errors.New("anpan: Another command was already registered by this name")
 
 	// ErrCommandNotFound is thrown when a message tries to invoke an unknown command, or when an attempt at removing an unregistered command was made.
-	ErrCommandNotFound = errors.New("Command not found")
+	ErrCommandNotFound = errors.New("anpan: Command not found")
 
 	// ErrDataUnavailable is thrown when data is unavailable, like channels, users or something else.
-	ErrDataUnavailable = errors.New("Necessary data couldn't be fetched")
+	ErrDataUnavailable = errors.New("anpan: Necessary data couldn't be fetched")
 
 	// ErrDMOnly is thrown when a DM-only command is executed on a guild.
-	ErrDMOnly = errors.New("DM-Only command on guild")
+	ErrDMOnly = errors.New("anpan: DM-Only command on guild")
 
 	// ErrGuildOnly is thrown when a guild-only command is executed in direct messages.
-	ErrGuildOnly = errors.New("Guild-Only command in DMs")
+	ErrGuildOnly = errors.New("anpan: Guild-Only command in DMs")
 
 	// ErrOwnerOnly is thrown when an owner-only command is executed.
-	ErrOwnerOnly = errors.New("Owner-Only command")
+	ErrOwnerOnly = errors.New("anpan: Owner-Only command")
 
 	// ErrSelfInsufficientPermissions is thrown when the bot itself does not have enough permissions.
-	ErrSelfInsufficientPermissions = errors.New("Insufficient permissions for the bot")
+	ErrSelfInsufficientPermissions = errors.New("anpan: Insufficient permissions for the bot")
 
 	// ErrUserInsufficientPermissions is thrown when the user doesn't meet the required permissions.
-	ErrUserInsufficientPermissions = errors.New("Insufficient permissions for the user")
+	ErrUserInsufficientPermissions = errors.New("anpan: Insufficient permissions for the user")
 )

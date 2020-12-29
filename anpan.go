@@ -36,6 +36,7 @@ import (
 // Parameters:
 // prefixes 		- The prefixes to use for the command handler.
 // owners			- The owners of this application; these are used for Owner-Only commands.
+// useState			- Whether to use the session's state th fetch data or not. The state will be ignored if the State field of the session used in the message handler is set false.
 // ignoreBots		- Whether to ignore users marked as bots or not.
 // checkPermissions	- Whether to check permissions or not.
 // useRoutines		- Whether to execute commands outside the event's routine.
@@ -44,11 +45,12 @@ import (
 // Refer to MessageHandler to properly activate the command handler.
 // State caching must be enabled. StateEnabled shall not be false then.
 // If you want to use a mention/ping as a prefix, just add it as a prefix in the format of "<@bot id>", replacing "bot id" with the bot's User ID.
-func New(prefixes []string, owners []string, ignoreBots, checkPermssions bool) CommandHandler {
+func New(prefixes []string, owners []string, useState, ignoreBots, checkPermssions bool) CommandHandler {
 	return CommandHandler{
 		enabled:          true,
 		prefixes:         prefixes,
 		owners:           owners,
+		useState:         useState,
 		ignoreBots:       ignoreBots,
 		checkPermissions: checkPermssions,
 	}

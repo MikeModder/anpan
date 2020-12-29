@@ -19,7 +19,7 @@ func main() {
 	}
 
 	// In here we create a handler with the supplied data...
-	handler := anpan.New([]string{"e!"}, []string{"your id", "another one"}, true, true)
+	handler := anpan.New([]string{"e!"}, []string{"your id", "another one"}, true, true, client.StateEnabled)
 	client.AddHandler(handler.MessageHandler)
 
 	// ...then we register a command...

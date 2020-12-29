@@ -63,6 +63,16 @@ func (c *CommandHandler) SetIgnoreBots(enable bool) {
 	c.ignoreBots = enable
 }
 
+// GetUseState returns whether the command handler uses the cached State of the session or not.
+func (c *CommandHandler) GetUseState() bool {
+	return c.useState
+}
+
+// SetUseState sets whether the command handler should use the cached State of the session or not.
+func (c *CommandHandler) SetUseState(enable bool) {
+	c.useState = enable
+}
+
 // AddPrefix adds a prefix to the handler.
 func (c *CommandHandler) AddPrefix(prefix string) {
 	c.prefixes = append(c.prefixes, prefix)
@@ -296,7 +306,7 @@ func (c *CommandHandler) throwError(context Context, command *Command, args []st
 	}
 }
 
-func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int) error {
+func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int, useState bool) error {
 	if necessaryPermissions == 0 {
 		return nil
 	}
@@ -310,9 +320,32 @@ func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild
 	permissions |= guild.Roles[0].Permissions // everyone role
 
 	for _, roleID := range member.Roles {
-		role, err := session.State.Role(guild.ID, roleID)
-		if err != nil {
-			return err
+		var (
+			role *discordgo.Role
+			err  error
+		)
+
+		if session.StateEnabled && useState {
+			role, err = session.State.Role(guild.ID, roleID)
+			if err != nil {
+				return err
+			}
+		} else {
+			roles, err := session.GuildRoles(guild.ID)
+			if err != nil {
+				return err
+			}
+
+			for _, v := range roles {
+				if v.ID == roleID {
+					role = v
+					break
+				}
+			}
+
+			if role == nil {
+				return ErrDataUnavailable
+			}
 		}
 
 		if role.Permissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
@@ -324,26 +357,26 @@ func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild
 
 	for _, overwrite := range channel.PermissionOverwrites {
 		if overwrite.ID == member.User.ID {
-			permissions = permissions &^ overwrite.Deny
 			permissions |= overwrite.Allow
+			permissions = permissions &^ overwrite.Deny
 		}
 
 		for _, roleID := range member.Roles {
 			if overwrite.ID == roleID {
-				permissions = permissions &^ overwrite.Deny
 				permissions |= overwrite.Allow
+				permissions = permissions &^ overwrite.Deny
 			}
 		}
 	}
 
 	if permissions&necessaryPermissions != necessaryPermissions {
-		return errors.New("insufficient perms")
+		return errors.New("anpan: Insufficient permissions")
 	}
 
 	return nil
 }
 
-// MessageHandler is the handler for the commands.
+// MessageHandler handles incoming messages and runs commands.
 // Pass this to your Session's AddHandler function.
 func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.MessageCreate) {
 	if !c.enabled || event.Author.ID == s.State.User.ID {
@@ -471,13 +504,13 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		}
 
 		if c.checkPermissions {
-			if err = permissionCheck(s, member, guild, channel, help.UserPermissions); err != nil {
+			if err = permissionCheck(s, member, guild, channel, help.UserPermissions, c.useState); err != nil {
 				c.debugLog("Insufficient permissions (user): \"%s\"", err.Error())
 				c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
 				return
 			}
 
-			if err = permissionCheck(s, selfMember, guild, channel, help.SelfPermissions); err != nil {
+			if err = permissionCheck(s, selfMember, guild, channel, help.SelfPermissions, c.useState); err != nil {
 				c.debugLog("Insufficient permissions (bot): \"%s\"", err.Error())
 				c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
 				return
@@ -585,13 +618,13 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	}
 
 	if c.checkPermissions {
-		if err = permissionCheck(s, member, guild, channel, command.UserPermissions); err != nil {
+		if err = permissionCheck(s, member, guild, channel, command.UserPermissions, c.useState); err != nil {
 			c.debugLog("Insufficient permissions (user): \"%s\"", err.Error())
 			c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
 			return
 		}
 
-		if err = permissionCheck(s, selfMember, guild, channel, command.SelfPermissions); err != nil {
+		if err = permissionCheck(s, selfMember, guild, channel, command.SelfPermissions, c.useState); err != nil {
 			c.debugLog("Insufficient permissions (bot): \"%s\"", err.Error())
 			c.throwError(context, command, content[1:], ErrUserInsufficientPermissions)
 			return
