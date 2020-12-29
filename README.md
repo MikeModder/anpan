@@ -13,4 +13,3 @@ Check the `example` directory for an example for usage of anpan, in addition to 
 Some examples of anpan being used:
 * The example bot inside the `example` directory.
 * My bot, **[007Bot-Go](https://github.com/MikeModder/007Bot-Go)**.
-* Apfel's current bot, **[Nutty Nook](https://github.com/Apfel/Nutty-Nook)**.
