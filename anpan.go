@@ -28,7 +28,7 @@ import (
 /* Package anpan:
  * A custom command handler for discordgo. (https://github.com/bwmarrin/discordgo)
  *
- * anpan (c) 2019-2020 MikeModder/MikeModder007, Apfel
+ * anpan (c) 2019-2021MikeModder/MikeModder007, Apfel
  */
 
 // New creates a new command handler.
