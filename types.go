@@ -77,8 +77,8 @@ type CommandType int
 type HelpCommand struct {
 	Aliases         []string
 	Name            string
-	SelfPermissions int
-	UserPermissions int
+	SelfPermissions int64
+	UserPermissions int64
 	Run             HelpCommandFunc
 }
 
@@ -111,8 +111,8 @@ type Command struct {
 	Hidden    bool
 	OwnerOnly bool
 
-	SelfPermissions int
-	UserPermissions int
+	SelfPermissions int64
+	UserPermissions int64
 
 	Run CommandFunc
 

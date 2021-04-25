@@ -171,7 +171,7 @@ func (c *CommandHandler) SetPrerunFunc(prf PrerunFunc) {
 //
 // Errors:
 // ErrCommandAlreadyRegistered -> There's already a (help) command with this name.
-func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneronly, hidden bool, selfperms, userperms int, cmdtype CommandType, run CommandFunc) error {
+func (c *CommandHandler) AddCommand(name, desc string, aliases []string, owneronly, hidden bool, selfperms, userperms int64, cmdtype CommandType, run CommandFunc) error {
 	for _, v := range c.commands {
 		if v.Name == name {
 			return ErrCommandAlreadyRegistered
@@ -235,7 +235,7 @@ func (c *CommandHandler) GetHelpCommand() *HelpCommand {
 //
 // Errors:
 // ErrCommandAlreadyRegistered  -> There's already another command that has been registered with the same name.
-func (c *CommandHandler) SetHelpCommand(name string, aliases []string, selfperms, userperms int, function HelpCommandFunc) error {
+func (c *CommandHandler) SetHelpCommand(name string, aliases []string, selfperms, userperms int64, function HelpCommandFunc) error {
 	for _, v := range c.commands {
 		if v.Name == name {
 			return ErrCommandAlreadyRegistered
@@ -306,12 +306,12 @@ func (c *CommandHandler) throwError(context Context, command *Command, args []st
 	}
 }
 
-func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int, useState bool) error {
+func permissionCheck(session *discordgo.Session, member *discordgo.Member, guild *discordgo.Guild, channel *discordgo.Channel, necessaryPermissions int64, useState bool) error {
 	if necessaryPermissions == 0 {
 		return nil
 	}
 
-	var permissions int
+	var permissions int64
 
 	if member.User.ID == guild.OwnerID {
 		return nil
