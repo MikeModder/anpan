@@ -22,7 +22,7 @@ package anpan
 /* context.go:
  * Contains some utility functions for anpan.Context.
  *
- * anpan (c) 2019-2021MikeModder/MikeModder007, Apfel
+ * anpan (c) 2019-2021 MikeModder/MikeModder007, Apfel
  */
 
 import (

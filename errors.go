@@ -24,7 +24,7 @@ import "errors"
 /* errors.go:
  * Error definitions.
  *
- * anpan (c) 2019-2021MikeModder/MikeModder007, Apfel
+ * anpan (c) 2019-2021 MikeModder/MikeModder007, Apfel
  */
 
 var (
