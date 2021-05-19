@@ -1,21 +1,10 @@
-// Copyright (c) 2019-2020 MikeModder/MikeModder007, Apfel
+// Copyright 2019-2021 MikeModder/MikeModder007, Apfel
 //
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software.
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package anpan
 
@@ -43,16 +32,18 @@ import (
 //
 // Notes:
 // Refer to MessageHandler to properly activate the command handler.
-// State caching must be enabled. StateEnabled shall not be false then.
-// If you want to use a mention/ping as a prefix, just add it as a prefix in the format of "<@bot id>", replacing "bot id" with the bot's User ID.
-func New(prefixes []string, owners []string, useState, ignoreBots, checkPermssions bool) CommandHandler {
+func New(prefixes []string, owners []string, useState, ignoreBots, respondToPings, checkPermssions bool, prerunFunc PrerunFunc, errorFunc OnErrorFunc, debugFunc DebugFunc) CommandHandler {
 	return CommandHandler{
-		enabled:          true,
-		prefixes:         prefixes,
-		owners:           owners,
-		useState:         useState,
-		ignoreBots:       ignoreBots,
 		checkPermissions: checkPermssions,
+		debugFunc:        debugFunc,
+		enabled:          true,
+		ignoreBots:       ignoreBots,
+		onErrorFunc:      errorFunc,
+		owners:           owners,
+		prefixes:         prefixes,
+		prerunFunc:       prerunFunc,
+		respondToPings:   respondToPings,
+		useState:         useState,
 	}
 }
 

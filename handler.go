@@ -1,21 +1,10 @@
-// Copyright (c) 2019-2020 MikeModder/MikeModder007, Apfel
+// Copyright 2019-2021 MikeModder/MikeModder007, Apfel
 //
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software.
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package anpan
 
@@ -392,6 +381,8 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		command *Command
 		help    *HelpCommand
 
+		content = []string{}
+
 		context Context
 
 		channel    *discordgo.Channel
@@ -412,7 +403,34 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 
 		if strings.HasPrefix(event.Message.Content, prefix) {
 			has = true
+			content = strings.Split(strings.TrimPrefix(event.Message.Content, prefix), " ")
 			break
+		}
+	}
+
+	if !has && c.respondToPings {
+		mention := ""
+		if c.useState {
+			mention = "<@!" + s.State.User.ID + ">" // discordgo doesn't seem to work right with Mention() here
+		} else {
+			user, err := s.User("@me")
+			if err != nil {
+				c.debugLog("Failed to fetch the current application: \"%s\"", err.Error())
+				c.throwError(context, &Command{
+					Name:            c.helpCommand.Name,
+					SelfPermissions: c.helpCommand.SelfPermissions,
+					UserPermissions: c.helpCommand.UserPermissions,
+					Type:            CommandTypeEverywhere,
+				}, nil, ErrDataUnavailable)
+				return
+			}
+
+			mention = "<@!" + user.ID + ">"
+		}
+
+		if strings.HasPrefix(event.Message.Content, mention) {
+			has = true
+			content = strings.Split(strings.TrimPrefix(event.Message.Content, mention), " ")[1:] // TODO: why this is needed is beyond me at the moment, figure this out
 		}
 	}
 
@@ -421,7 +439,6 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 		return
 	}
 
-	content := strings.Split(strings.TrimPrefix(event.Message.Content, prefix), " ")
 	if len(content) == 0 || content[0] == "" {
 		c.debugLog("Message %s was empty", event.Message.ID)
 		return

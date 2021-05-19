@@ -8,6 +8,19 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+func exampleOnErrorFunc(context anpan.Context, command *anpan.Command, content []string, err error) {
+	if err == anpan.ErrCommandNotFound {
+		return
+	}
+
+	fmt.Printf("An error occurred for command \"%s\": \"%s\".\n", command.Name, err.Error())
+}
+
+func examplePrerunFunc(context anpan.Context, command *anpan.Command, content []string) bool {
+	fmt.Printf("Command \"%s\" is being run by \"%s#%s\" (ID: %s).\n", command.Name, context.User.Username, context.User.Discriminator, context.User.ID)
+	return true
+}
+
 func main() {
 	fmt.Println("Example bot for anpan.\nVersion 1.2.0.\nInitializing...")
 
@@ -19,7 +32,7 @@ func main() {
 	}
 
 	// In here we create a handler with the supplied data...
-	handler := anpan.New([]string{"e!"}, []string{"your id", "another one"}, true, true, client.StateEnabled)
+	handler := anpan.New([]string{"e!"}, []string{"your id", "another one"}, client.StateEnabled, true, true, true, examplePrerunFunc, exampleOnErrorFunc, nil)
 	client.AddHandler(handler.MessageHandler)
 
 	// ...then we register a command...
@@ -27,17 +40,6 @@ func main() {
 
 	// ...and a help command.
 	handler.SetHelpCommand("help", []string{}, discordgo.PermissionSendMessages, discordgo.PermissionSendMessages, helpCommand)
-
-	// And, of course, a function to let us know if something went wrong.
-	handler.SetOnErrorFunc(func(context anpan.Context, command *anpan.Command, content []string, err error) {
-		fmt.Printf("An error occurred for command \"%s\": \"%s\".\n", command.Name, err.Error())
-	})
-
-	// This function is fired after all available checks and before the command itself.
-	handler.SetPrerunFunc(func(context anpan.Context, command *anpan.Command, content []string) bool {
-		fmt.Printf("Command \"%s\" is being run by \"%s#%s\" (ID: %s).\n", command.Name, context.User.Username, context.User.Discriminator, context.User.ID)
-		return true
-	})
 
 	// Now, time to connect...
 	if err = client.Open(); err != nil {
