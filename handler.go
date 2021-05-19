@@ -422,6 +422,11 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 	}
 
 	content := strings.Split(strings.TrimPrefix(event.Message.Content, prefix), " ")
+	if len(content) == 0 || content[0] == "" {
+		c.debugLog("Message %s was empty", event.Message.ID)
+		return
+	}
+
 	c.debugLog("Parsed message \"%s\": \"%s\"", event.Message.ID, content)
 
 	if content[0] == c.helpCommand.Name {

@@ -58,19 +58,15 @@ func main() {
 }
 
 func pingCommand(ctx anpan.Context, _ []string) error {
-	// First, we need a message...
+	// We need to know what time it is now.
+	timestamp := time.Now()
+
 	msg, err := ctx.Reply("Pong!")
 	if err != nil {
 		return err
 	}
 
-	// ...for a timestamp...
-	sent, err := msg.Timestamp.Parse()
-	if err != nil {
-		return err
-	}
-
-	// ...to use some math for the final value.
-	_, err = ctx.Session.ChannelMessageEdit(ctx.Message.ChannelID, msg.ID, fmt.Sprintf("Pong! Ping took **%dms**!", time.Now().Sub(sent).Milliseconds()))
+	// Now we can compare it to the current time to see how much time went away during the process of sending a message.
+	_, err = ctx.Session.ChannelMessageEdit(ctx.Message.ChannelID, msg.ID, fmt.Sprintf("Pong! Ping took **%dms**!", time.Since(timestamp).Milliseconds()))
 	return err
 }
