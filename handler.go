@@ -539,7 +539,7 @@ func (c *CommandHandler) MessageHandler(s *discordgo.Session, event *discordgo.M
 			}
 		}
 
-		if !c.prerunFunc(context, &Command{
+		if c.prerunFunc != nil && !c.prerunFunc(context, &Command{
 			Name:            c.helpCommand.Name,
 			SelfPermissions: c.helpCommand.SelfPermissions,
 			UserPermissions: c.helpCommand.UserPermissions,
